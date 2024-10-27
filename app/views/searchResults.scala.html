@@ -1,0 +1,22 @@
+@(keyword: String, videos: List[entities.Video])
+
+@main("YT Lytics") {
+<h1>Welcome to YT Lytics!</h1>
+<form action="/search" method="GET">
+    <input type="text" name="keyword" placeholder="Enter search keywords">
+    <button type="submit">Search</button>
+</form>
+
+<h1>Search Results for "@keyword"</h1>
+
+<ul>
+    @for(video <- videos) {
+    <li>
+        <img src="@video.thumbnailUrl" alt="@video.title"/>
+        <h3><a href="https://www.youtube.com/watch?v=@video.videoId" target="_blank">@video.title</a></h3>
+        <p>@video.description</p>
+        <p><strong>Channel:</strong> @video.channelTitle</p>
+    </li>
+    }
+</ul>
+}
