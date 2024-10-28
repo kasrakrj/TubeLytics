@@ -1,6 +1,6 @@
 package controllers;
 
-import models.services.YouTubeService;
+import models.services.SearchServiceImpl;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -10,10 +10,10 @@ import java.util.concurrent.CompletionStage;
 
 public class YoutubeController extends Controller {
 
-    private final YouTubeService youTubeService;
+    private final SearchServiceImpl youTubeService;
 
     @Inject
-    public YoutubeController(YouTubeService youTubeService) {
+    public YoutubeController(SearchServiceImpl youTubeService) {
         this.youTubeService = youTubeService;
     }
 

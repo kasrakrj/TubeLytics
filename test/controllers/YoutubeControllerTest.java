@@ -1,7 +1,7 @@
 package controllers;
 
 import models.entities.Video;
-import models.services.YouTubeService;
+import models.services.SearchServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -21,7 +21,7 @@ import static play.mvc.Http.Status.*;
 class YoutubeControllerTest {
 
     @Mock
-    private YouTubeService youTubeService;
+    private SearchServiceImpl youTubeService;
 
     @InjectMocks
     private YoutubeController youtubeController;
