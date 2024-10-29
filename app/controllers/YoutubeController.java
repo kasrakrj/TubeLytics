@@ -1,6 +1,5 @@
 package controllers;
 
-import models.entities.SearchQuery;
 import models.entities.Video;
 import models.services.SearchService;
 import play.mvc.Controller;
