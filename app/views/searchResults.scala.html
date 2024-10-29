@@ -1,22 +1,31 @@
-@(keyword: String, videos: List[entities.Video])
+@import java.util.List
+@import models.entities.Video
+
+@(keyword: String, videos: List[Video])
 
 @main("YT Lytics") {
-<h1>Welcome to YT Lytics!</h1>
-<form action="/search" method="GET">
-    <input type="text" name="keyword" placeholder="Enter search keywords">
-    <button type="submit">Search</button>
-</form>
+    <h1>Welcome to YT Lytics!</h1>
+    <form action="/search" method="GET">
+        <input type="text" name="keyword" placeholder="Enter search keywords">
+        <button type="submit">Search</button>
+    </form>
 
-<h1>Search Results for "@keyword"</h1>
+    <h1>Search Results for "@keyword"</h1>
 
-<ul>
-    @for(video <- videos) {
-    <li>
-        <img src="@video.thumbnailUrl" alt="@video.title"/>
-        <h3><a href="https://www.youtube.com/watch?v=@video.videoId" target="_blank">@video.title</a></h3>
-        <p>@video.description</p>
-        <p><strong>Channel:</strong> @video.channelTitle</p>
-    </li>
+    <ul>
+    @for(index <- 0 until videos.size()) {
+        @defining(videos.get(index)) { video =>
+            <li>
+                <img src="@video.getThumbnailUrl()" alt="@video.getTitle()"/>
+                <h3>
+                    <a href="https://www.youtube.com/watch?v=@video.getVideoId()" target="_blank">
+                    @video.getTitle()
+                    </a>
+                </h3>
+                <p>@video.getDescription()</p>
+                <p><strong>Channel:</strong> @video.getChannelTitle()</p>
+            </li>
+        }
     }
-</ul>
+    </ul>
 }

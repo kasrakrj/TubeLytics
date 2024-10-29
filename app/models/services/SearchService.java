@@ -1,10 +1,8 @@
 package models.services;
 
-import models.entities.Video;
-
-import java.util.List;
+import models.entities.SearchQuery;
 import java.util.concurrent.CompletionStage;
 
 public interface SearchService {
-    public CompletionStage<List<Video>> searchVideos(String keyword);
+    CompletionStage<SearchQuery> searchVideos(String keyword);
 }
