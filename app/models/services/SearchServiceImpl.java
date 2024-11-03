@@ -57,22 +57,6 @@ public class SearchServiceImpl implements SearchService {
     }
 
 
-    private SearchQuery fetchSearchQuery(String keyword, String apiKey) throws Exception {
-        String apiUrl = buildApiUrl(keyword, apiKey);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI(apiUrl))
-                .GET()
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() == 200) {
-            List<Video> videos = parseResponse(response.body());
-            return new SearchQuery(keyword, videos);
-        } else {
-            throw new RuntimeException("HTTP error: " + response.statusCode());
-        }
-    }
 
     private String buildApiUrl(String keyword, String apiKey) {
         String encodedKeyword = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
