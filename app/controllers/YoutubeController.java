@@ -2,25 +2,28 @@ package controllers;
 
 import models.entities.Video;
 import models.services.SearchService;
+import models.services.SearchServiceImpl;
 import play.mvc.Controller;
 import play.mvc.Result;
 
-import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.http.HttpClient;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class YoutubeController extends Controller {
 
     private static final Logger logger = LoggerFactory.getLogger(YoutubeController.class);
     private final SearchService searchService;
 
-    @Inject
-    public YoutubeController(SearchService searchService) {
-        this.searchService = searchService;
+    // Constructor without dependency injection
+    public YoutubeController() {
+        // Instantiate HttpClient manually and pass it to SearchServiceImpl
+        HttpClient httpClient = HttpClient.newHttpClient();
+        this.searchService = new SearchServiceImpl(httpClient);
     }
 
     public Result index() {
