@@ -5,7 +5,6 @@ import models.entities.Video;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.inject.Inject;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -22,10 +21,8 @@ import java.util.stream.IntStream;
 public class SearchServiceImpl implements SearchService {
 
     private static final String API_KEY = "AIzaSyBCYzFvdDbkPslgU8WvAqX_dMk9RHMG1Ug";
-    // Encode the keyword to handle spaces and special characters
     private final HttpClient httpClient;
 
-    @Inject
     public SearchServiceImpl(HttpClient httpClient) {
         this.httpClient = httpClient;
     }
@@ -40,8 +37,7 @@ public class SearchServiceImpl implements SearchService {
 
 
 
-    @Override
-    public CompletionStage<SearchQuery> fetchSearchQueryAsync(String keyword, String apiKey) {
+    private CompletionStage<SearchQuery> fetchSearchQueryAsync(String keyword, String apiKey) {
         String apiUrl = buildApiUrl(keyword, apiKey);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))
@@ -60,8 +56,8 @@ public class SearchServiceImpl implements SearchService {
                 });
     }
 
-    @Override
-    public SearchQuery fetchSearchQuery(String keyword, String apiKey) throws Exception {
+
+    private SearchQuery fetchSearchQuery(String keyword, String apiKey) throws Exception {
         String apiUrl = buildApiUrl(keyword, apiKey);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI(apiUrl))
