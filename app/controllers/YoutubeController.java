@@ -1,20 +1,25 @@
 package controllers;
 
+import models.entities.Video;
+import models.Sentiment;
 import models.services.YouTubeService;
 import play.mvc.Controller;
 import play.mvc.Result;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 public class YoutubeController extends Controller {
 
     private final YouTubeService youTubeService;
+    private final Sentiment sentimentAnalyzer;
 
     @Inject
-    public YoutubeController(YouTubeService youTubeService) {
+    public YoutubeController(YouTubeService youTubeService, Sentiment sentimentAnalyzer) {
         this.youTubeService = youTubeService;
+        this.sentimentAnalyzer = sentimentAnalyzer;
     }
 
     public Result index() {
@@ -32,7 +37,12 @@ public class YoutubeController extends Controller {
                     if (videos.isEmpty()) {
                         return ok(views.html.noResults.render(keyword));  // Handle empty search results
                     }
-                    return ok(views.html.searchResults.render(keyword, videos));
+
+                    // Use the injected sentimentAnalyzer to analyze video sentiments
+                    String sentiment = sentimentAnalyzer.AnalyzeSentiment(videos);
+
+                    // Pass keyword, videos, and sentiment to render
+                    return ok(views.html.searchResults.render(keyword, videos, sentiment));
                 })
                 .exceptionally(ex -> {
                     // Log the error and display an error message

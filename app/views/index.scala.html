@@ -1,9 +1,92 @@
 @()
 
 @main("YT Lytics") {
-<h1>Welcome to YT Lytics!</h1>
-<form action="/search" method="GET">
-  <input type="text" name="keyword" placeholder="Enter search keywords">
-  <button type="submit">Search</button>
-</form>
+<style>
+  /* Background image */
+  body, html {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      background-image: url('https://images8.alphacoders.com/119/thumb-1920-1192293.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-color: #333;
+  }
+
+  /* Circular container */
+  .circle-container {
+      position: relative;
+      width: 600px;
+      height: 600px;
+      border-radius: 70%;
+      background-color: rgba(0, 0, 0, 0.5);
+      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+
+  /* Search bar */
+  .search-bar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background-color: #fff;
+      border-radius: 25px;
+      width: 80%;
+      padding: 10px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* YouTube logo */
+  .youtube-logo {
+      width: 25px;
+      height: 25px;
+      margin-right: 10px;
+  }
+
+  /* Input field */
+  .search-bar input[type="text"] {
+      flex-grow: 1;
+      border: none;
+      outline: none;
+      font-size: 1em;
+  }
+
+  /* Search icon */
+  .search-icon {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+  }
+
+  /* Welcome message */
+  .welcome-message {
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      color: #fff;
+      text-align: center;
+      font-weight: bold;
+      z-index: 1;
+  }
+</style>
+
+<div class="circle-container">
+  <div class="welcome-message">Welcome to YT Lytics!</div>
+  <div class="search-bar">
+    <img src="https://i.pinimg.com/564x/3a/36/20/3a36206f35352b4230d5fc9f17fcea92.jpg" alt="YouTube" class="youtube-logo">
+    <form action="/search" method="GET" style="flex-grow: 1;">
+      <input type="text" name="keyword" placeholder="Enter search keywords">
+    </form>
+    <img src="https://i.pinimg.com/564x/3f/55/8a/3f558a7b0b24f49d5f45961e5419ecd5.jpg" alt="Search" class="search-icon" onclick="document.forms[0].submit()">
+  </div>
+</div>
 }

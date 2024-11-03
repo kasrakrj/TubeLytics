@@ -4,10 +4,8 @@ import models.entities.Video;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.net.URLEncoder;
 import java.net.http.*;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -19,8 +17,7 @@ public class YouTubeService {
 
     // Method to call the YouTube API and process the response
     public CompletionStage<List<Video>> searchVideos(String keyword) {
-        String encodedKeyword = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
-        String apiUrl = YOUTUBE_SEARCH_URL + encodedKeyword + "&key=" + API_KEY;
+        String apiUrl = YOUTUBE_SEARCH_URL + keyword + "&key=" + API_KEY;
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUrl)).build();
