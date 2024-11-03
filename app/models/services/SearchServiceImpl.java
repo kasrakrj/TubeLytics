@@ -30,15 +30,14 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     public CompletionStage<SearchQuery> searchVideos(String keyword) {
-        String encodedKeyword = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
-        return fetchSearchQueryAsync(keyword, API_KEY);
+        return fetchSearchQueryAsync(keyword);
 
     }
 
 
 
-    private CompletionStage<SearchQuery> fetchSearchQueryAsync(String keyword, String apiKey) {
-        String apiUrl = buildApiUrl(keyword, apiKey);
+    private CompletionStage<SearchQuery> fetchSearchQueryAsync(String keyword) {
+        String apiUrl = buildApiUrl(keyword, SearchServiceImpl.API_KEY);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))
                 .GET()
