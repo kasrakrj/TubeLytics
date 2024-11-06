@@ -87,7 +87,7 @@ public class Sentiment {
      * @param videos the list of videos we want to analyze their overall sentiment
      * @return a CompletableFuture<String> representing the overall sentiment asynchronously
      */
-    public CompletableFuture<String> AnalyzeSentiment(List<Video> videos) {
+    public CompletableFuture<String> analyzeSentiment(List<Video> videos) {
         if (videos == null || videos.isEmpty()) {
             return CompletableFuture.completedFuture(":-|"); // Neutral if no videos are present
         }
