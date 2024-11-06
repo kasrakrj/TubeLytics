@@ -6,13 +6,23 @@ public class Video {
     private String channelTitle;
     private String thumbnailUrl;
     private String videoId;
+    private String channelId;
 
-    public Video(String title, String description, String channelTitle, String thumbnailUrl, String videoId) {
+//    public Video(String title, String description, String channelTitle, String thumbnailUrl, String videoId) {
+//        this.title = title;
+//        this.description = description;
+//        this.channelTitle = channelTitle;
+//        this.thumbnailUrl = thumbnailUrl;
+//        this.videoId = videoId;
+//    }
+
+    public Video(String title, String description, String channelTitle, String thumbnailUrl, String videoId, String channelId) {
         this.title = title;
         this.description = description;
         this.channelTitle = channelTitle;
         this.thumbnailUrl = thumbnailUrl;
         this.videoId = videoId;
+        this.channelId = channelId;
     }
 
     // Getter methods
@@ -34,5 +44,9 @@ public class Video {
 
     public String getVideoId() {
         return videoId;
+    }
+
+    public String getChannelId() {
+        return channelId;
     }
 }

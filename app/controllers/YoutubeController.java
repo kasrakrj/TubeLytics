@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -37,7 +38,7 @@ public class YoutubeController extends Controller {
             return CompletableFuture.completedFuture(redirect(routes.YoutubeController.index()));
         }
 
-        return youTubeService.searchVideos(keyword).thenCompose(videos -> {
+        return youTubeService.searchVideos(keyword).thenApply(videos -> {
             // Handle max search limit
             if (searchHistory.size() >= MAX_SEARCHES) {
                 String oldestKeyword = searchHistory.keySet().iterator().next();
@@ -45,25 +46,27 @@ public class YoutubeController extends Controller {
                 individualSentiments.remove(oldestKeyword);
             }
 
-            // Store individual search results
+            // Store individual search results and sentiment
             searchHistory.put(keyword, videos);
+            String individualSentiment = sentimentAnalyzer.AnalyzeSentiment(videos);
+            individualSentiments.put(keyword, individualSentiment);
 
-            // Calculate individual sentiment asynchronously
-            return sentimentAnalyzer.AnalyzeSentiment(videos).thenCompose(individualSentiment -> {
-                individualSentiments.put(keyword, individualSentiment);
+            // Calculate overall sentiment for all searches
+            List<Video> allVideos = searchHistory.values().stream().flatMap(List::stream).collect(Collectors.toList());
+            String overallSentiment = sentimentAnalyzer.AnalyzeSentiment(allVideos);
 
-                // Calculate overall sentiment for all searches asynchronously
-                List<Video> allVideos = searchHistory.values().stream()
-                        .flatMap(List::stream)
-                        .collect(Collectors.toList());
-
-                return sentimentAnalyzer.AnalyzeSentiment(allVideos).thenApply(overallSentiment ->
-                        ok(views.html.searchResults.render(searchHistory, overallSentiment, individualSentiments))
-                );
-            });
+            // Pass both individual and overall sentiments to the view
+            return ok(views.html.searchResults.render(searchHistory, overallSentiment, individualSentiments));
         }).exceptionally(ex -> {
             ex.printStackTrace();
             return internalServerError(views.html.errorPage.render("An error occurred while fetching search results."));
+        });
+    }
+
+    public CompletionStage<Result> channelProfile(String channelId) {
+        return youTubeService.getChannelInfo(channelId).thenCombine(youTubeService.getChannelVideos(channelId, 10), (channelInfo, videos) -> ok(views.html.channelProfile.render(channelInfo, videos))).exceptionally(ex -> {
+            ex.printStackTrace();
+            return internalServerError(views.html.errorPage.render("An error occurred while fetching channel profile."));
         });
     }
 }
