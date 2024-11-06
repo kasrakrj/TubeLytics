@@ -1,24 +1,22 @@
 package controllers;
 
-import models.entities.Video;
 import models.Sentiment;
-import models.services.YouTubeService;
+import models.services.SearchServiceImpl;
 import play.mvc.Controller;
 import play.mvc.Result;
 
 import javax.inject.Inject;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 public class YoutubeController extends Controller {
 
-    private final YouTubeService youTubeService;
+    private final SearchServiceImpl searchService;
     private final Sentiment sentimentAnalyzer;
 
     @Inject
-    public YoutubeController(YouTubeService youTubeService, Sentiment sentimentAnalyzer) {
-        this.youTubeService = youTubeService;
+    public YoutubeController(SearchServiceImpl searchService, Sentiment sentimentAnalyzer) {
+        this.searchService = searchService;
         this.sentimentAnalyzer = sentimentAnalyzer;
     }
 
@@ -31,8 +29,8 @@ public class YoutubeController extends Controller {
             return CompletableFuture.completedFuture(redirect(routes.YoutubeController.index()));
         }
 
-        // Call the YouTubeService to fetch and process video results
-        return youTubeService.searchVideos(keyword)
+        // Call the SearchServiceImpl to fetch and process video results
+        return searchService.searchVideos(keyword).getVideos()
                 .thenApply(videos -> {
                     if (videos.isEmpty()) {
                         return ok(views.html.noResults.render(keyword));  // Handle empty search results

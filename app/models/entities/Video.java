@@ -1,11 +1,14 @@
 package models.entities;
 
+import java.util.List;
+
 public class Video {
     private String title;
     private String description;
     private String channelTitle;
     private String thumbnailUrl;
     private String videoId;
+    private List<Tag> tags;
 
     public Video(String title, String description, String channelTitle, String thumbnailUrl, String videoId) {
         this.title = title;
