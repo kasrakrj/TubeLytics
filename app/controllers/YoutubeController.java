@@ -12,10 +12,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import java.util.HashMap;
 import java.util.Map;
-
-import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
 
 public class YoutubeController extends Controller {
@@ -55,9 +52,7 @@ public class YoutubeController extends Controller {
             individualSentiments.put(keyword, individualSentiment);
 
             // Calculate overall sentiment for all searches
-            List<Video> allVideos = searchHistory.values().stream()
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
+            List<Video> allVideos = searchHistory.values().stream().flatMap(List::stream).collect(Collectors.toList());
             String overallSentiment = sentimentAnalyzer.AnalyzeSentiment(allVideos);
 
             // Pass both individual and overall sentiments to the view
@@ -65,6 +60,13 @@ public class YoutubeController extends Controller {
         }).exceptionally(ex -> {
             ex.printStackTrace();
             return internalServerError(views.html.errorPage.render("An error occurred while fetching search results."));
+        });
+    }
+
+    public CompletionStage<Result> channelProfile(String channelId) {
+        return youTubeService.getChannelInfo(channelId).thenCombine(youTubeService.getChannelVideos(channelId, 10), (channelInfo, videos) -> ok(views.html.channelProfile.render(channelInfo, videos))).exceptionally(ex -> {
+            ex.printStackTrace();
+            return internalServerError(views.html.errorPage.render("An error occurred while fetching channel profile."));
         });
     }
 }

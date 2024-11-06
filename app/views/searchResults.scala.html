@@ -109,10 +109,6 @@
         color: #444;
     }
 
-
-
-
-
 </style>
 
 <h1>YT Lytics - Search Results</h1>
@@ -120,13 +116,10 @@
     <input type="text" name="keyword" placeholder="Enter search keywords">
     <button type="submit">Search</button>
 </form>
-
-<!-- Display overall sentiment for all searches -->
 <div class="sentiment">
-    Overall Sentiment for All Searches: @overallSentiment
+    Overall Sentiment: @overallSentiment
 </div>
 
-<!-- Display individual sentiments and search results for each search -->
 @for((keyword, videos) <- searchHistory.toSeq.reverse) {
 <h2>Search Results for '@keyword'</h2>
 <div class="sentiment">
@@ -139,7 +132,8 @@
         <div>
             <h3>@video.getTitle()</h3>
             <p>@video.getDescription()</p>
-            <small>Channel: @video.getChannelTitle()</small>
+            <!-- Link to channel profile page using channel ID -->
+            <small>Channel: <a href="@routes.YoutubeController.channelProfile(video.getChannelId())">@video.getChannelTitle()</a></small>
         </div>
     </li>
     }
