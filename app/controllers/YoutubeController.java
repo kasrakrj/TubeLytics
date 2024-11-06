@@ -7,14 +7,24 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 import javax.inject.Inject;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
 
 public class YoutubeController extends Controller {
 
     private final YouTubeService youTubeService;
     private final Sentiment sentimentAnalyzer;
+    private LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
+    private Map<String, String> individualSentiments = new LinkedHashMap<>();
+    private static final int MAX_SEARCHES = 10;
 
     @Inject
     public YoutubeController(YouTubeService youTubeService, Sentiment sentimentAnalyzer) {
@@ -31,23 +41,30 @@ public class YoutubeController extends Controller {
             return CompletableFuture.completedFuture(redirect(routes.YoutubeController.index()));
         }
 
-        // Call the YouTubeService to fetch and process video results
-        return youTubeService.searchVideos(keyword)
-                .thenApply(videos -> {
-                    if (videos.isEmpty()) {
-                        return ok(views.html.noResults.render(keyword));  // Handle empty search results
-                    }
+        return youTubeService.searchVideos(keyword).thenApply(videos -> {
+            // Handle max search limit
+            if (searchHistory.size() >= MAX_SEARCHES) {
+                String oldestKeyword = searchHistory.keySet().iterator().next();
+                searchHistory.remove(oldestKeyword);
+                individualSentiments.remove(oldestKeyword);
+            }
 
-                    // Use the injected sentimentAnalyzer to analyze video sentiments
-                    String sentiment = sentimentAnalyzer.AnalyzeSentiment(videos);
+            // Store individual search results and sentiment
+            searchHistory.put(keyword, videos);
+            String individualSentiment = sentimentAnalyzer.AnalyzeSentiment(videos);
+            individualSentiments.put(keyword, individualSentiment);
 
-                    // Pass keyword, videos, and sentiment to render
-                    return ok(views.html.searchResults.render(keyword, videos, sentiment));
-                })
-                .exceptionally(ex -> {
-                    // Log the error and display an error message
-                    ex.printStackTrace();
-                    return internalServerError(views.html.errorPage.render("An error occurred while fetching search results."));
-                });
+            // Calculate overall sentiment for all searches
+            List<Video> allVideos = searchHistory.values().stream()
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            String overallSentiment = sentimentAnalyzer.AnalyzeSentiment(allVideos);
+
+            // Pass both individual and overall sentiments to the view
+            return ok(views.html.searchResults.render(searchHistory, overallSentiment, individualSentiments));
+        }).exceptionally(ex -> {
+            ex.printStackTrace();
+            return internalServerError(views.html.errorPage.render("An error occurred while fetching search results."));
+        });
     }
 }

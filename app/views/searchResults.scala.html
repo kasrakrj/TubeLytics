@@ -1,4 +1,4 @@
-@(keyword: String, videos: List[entities.Video], sentiment: String)
+@(searchHistory: Map[String, List[entities.Video]], overallSentiment: String, individualSentiments: Map[String, String])
 
 @main("YT Lytics") {
 <style>
@@ -108,28 +108,41 @@
     li p strong {
         color: #444;
     }
+
+
+
+
+
 </style>
 
-<h1>Welcome to YT Lytics!</h1>
+<h1>YT Lytics - Search Results</h1>
 <form action="/search" method="GET">
     <input type="text" name="keyword" placeholder="Enter search keywords">
     <button type="submit">Search</button>
 </form>
 
-<h1>Search Results for "@keyword"</h1>
+<!-- Display overall sentiment for all searches -->
+<div class="sentiment">
+    Overall Sentiment for All Searches: @overallSentiment
+</div>
 
-<div class="sentiment">Overall Sentiment: @sentiment</div>
-
+<!-- Display individual sentiments and search results for each search -->
+@for((keyword, videos) <- searchHistory.toSeq.reverse) {
+<h2>Search Results for '@keyword'</h2>
+<div class="sentiment">
+    Sentiment for '@keyword': @individualSentiments(keyword)
+</div>
 <ul>
     @for(video <- videos) {
     <li>
-        <img src="@video.getThumbnailUrl()" alt="@video.getTitle()"/>
+        <img src="@video.getThumbnailUrl()" alt="Thumbnail">
         <div>
-            <h3><a href="https://www.youtube.com/watch?v=@video.getVideoId()" target="_blank">@video.getTitle()</a></h3>
+            <h3>@video.getTitle()</h3>
             <p>@video.getDescription()</p>
-            <p><strong>Channel:</strong> @video.getChannelTitle()</p>
+            <small>Channel: @video.getChannelTitle()</small>
         </div>
     </li>
     }
 </ul>
+}
 }
