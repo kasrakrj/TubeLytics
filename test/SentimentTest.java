@@ -61,7 +61,7 @@ public class SentimentTest {
                 new Video("Neutral Video", "Just an ordinary day.", "Channel 3", "url3", "id3","channelId3")
         );
 
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.AnalyzeSentiment(videos);
+        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
         assertEquals(":-|", sentimentFuture.join());
     }
 
@@ -74,7 +74,7 @@ public class SentimentTest {
                 new Video("Positive Video 3", "Life is amazing!", "Channel 3", "url3", "id3","channelId3")
         );
 
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.AnalyzeSentiment(videos);
+        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
         assertEquals(":-)", sentimentFuture.join());
     }
 
@@ -87,7 +87,7 @@ public class SentimentTest {
                 new Video("Negative Video 3", "Feeling very down", "Channel 3", "url3", "id3","channelId3")
         );
 
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.AnalyzeSentiment(videos);
+        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
         assertEquals(":-(", sentimentFuture.join());
     }
 
@@ -100,7 +100,7 @@ public class SentimentTest {
                 new Video("Neutral Video 3", "Nothing much happened", "Channel 3", "url3", "id3","channelId3")
         );
 
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.AnalyzeSentiment(videos);
+        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
         assertEquals(":-|", sentimentFuture.join());
     }
 
@@ -109,14 +109,14 @@ public class SentimentTest {
     public void testAnalyzeSentiment_EmptyVideoList() {
         List<Video> videos = List.of();
 
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.AnalyzeSentiment(videos);
+        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
         assertEquals(":-|", sentimentFuture.join());
     }
 
     // Test for average sentiment with a null video list
     @Test
     public void testAnalyzeSentiment_NullVideoList() {
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.AnalyzeSentiment(null);
+        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(null);
         assertEquals(":-|", sentimentFuture.join());
     }
 }

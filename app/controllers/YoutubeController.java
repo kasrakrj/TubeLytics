@@ -50,7 +50,7 @@ public class YoutubeController extends Controller {
             searchHistory.put(keyword, videos);
 
             // Analyze individual sentiment for the search
-            return sentimentAnalyzer.analyzeSentiment(videos).thenCompose(individualSentiment -> {
+            return sentimentAnalyzer.avgSentiment(videos).thenCompose(individualSentiment -> {
                 individualSentiments.put(keyword, individualSentiment);
 
                 // Calculate overall sentiment based on all searches in history
@@ -59,7 +59,7 @@ public class YoutubeController extends Controller {
                         .collect(Collectors.toList());
 
                 // Calculate overall sentiment asynchronously
-                return sentimentAnalyzer.analyzeSentiment(allVideos).thenApply(overallSentiment ->
+                return sentimentAnalyzer.avgSentiment(allVideos).thenApply(overallSentiment ->
                         ok(views.html.searchResults.render(searchHistory, overallSentiment, individualSentiments))
                 );
             });

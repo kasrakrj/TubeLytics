@@ -46,7 +46,8 @@ class YoutubeControllerTest {
                 "Description",
                 "http://video-url.com",
                 "http://thumbnail-url.com",
-                "VideoId123"));
+                "VideoId123",
+                "ChannelID"));
         when(youTubeService.searchVideos(keyword)).thenReturn(CompletableFuture.completedFuture(mockVideos));
 
         CompletionStage<Result> resultStage = youtubeController.search(keyword);
