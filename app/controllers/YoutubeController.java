@@ -2,6 +2,7 @@ package controllers;
 
 import models.entities.Video;
 import models.Sentiment;
+import models.services.WordStatService;
 import models.services.YouTubeService;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -15,18 +16,22 @@ import java.util.concurrent.CompletionStage;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import scala.collection.immutable.Map$;
+
 public class YoutubeController extends Controller {
 
     private final YouTubeService youTubeService;
     private final Sentiment sentimentAnalyzer;
+    private final WordStatService wordStatService;
     private LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
     private Map<String, String> individualSentiments = new LinkedHashMap<>();
     private static final int MAX_SEARCHES = 10;
 
     @Inject
-    public YoutubeController(YouTubeService youTubeService, Sentiment sentimentAnalyzer) {
+    public YoutubeController(YouTubeService youTubeService, Sentiment sentimentAnalyzer, WordStatService wordStatService) {
         this.youTubeService = youTubeService;
         this.sentimentAnalyzer = sentimentAnalyzer;
+        this.wordStatService = wordStatService;
     }
 
     public Result index() {
@@ -69,4 +74,16 @@ public class YoutubeController extends Controller {
             return internalServerError(views.html.errorPage.render("An error occurred while fetching channel profile."));
         });
     }
+
+    public CompletionStage<Result> wordStats(String keyword){
+        return youTubeService.searchVideos(keyword).thenApply(videos -> {
+            Map<String, Long> wordStats = wordStatService.createWordStats(videos);
+            scala.collection.immutable.Map<String, Long> wordStatsScala = scala.collection.immutable.Map.from(scala.jdk.CollectionConverters.MapHasAsScala(wordStats).asScala());
+            return ok(views.html.wordStats.render(keyword, wordStats));
+            }).exceptionally(ex -> {
+            ex.printStackTrace();
+            return internalServerError(views.html.errorPage.render("An error occurred while fetching word stats."));
+            });
+    }
+
 }
