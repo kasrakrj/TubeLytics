@@ -7,6 +7,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayJava)
 
 scalaVersion := "2.13.15"
 
+//libraryDependencies += "org.jacoco" % "org.jacoco.agent" % "0.8.7" % "test"
+//enablePlugins(Jacoco)
 libraryDependencies += guice
 libraryDependencies += "org.asynchttpclient" % "async-http-client" % "2.12.3"
 libraryDependencies += "org.json" % "json" % "20210307"
