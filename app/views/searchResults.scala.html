@@ -137,8 +137,11 @@
         <div>
             <h3><a href="https://www.youtube.com/watch?v=@video.getVideoId" target="_blank">@video.getTitle</a></h3>
             <p>@video.getDescription</p>
+
             <!-- Link to channel profile page using channel ID -->
             <small>Channel: <a href="@routes.YoutubeController.channelProfile(video.getChannelId)">@video.getChannelTitle</a></small>
+            <p><a href="@routes.YoutubeController.tags(video.getVideoId)">Tags</a></p>
+
         </div>
     </li>
     }

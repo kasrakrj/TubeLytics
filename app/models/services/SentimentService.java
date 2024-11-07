@@ -1,4 +1,4 @@
-package models;
+package models.services;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -11,7 +11,7 @@ import models.entities.Video;
  *
  * @author Hosna Habibi
  */
-public class Sentiment {
+public class SentimentService {
 
     /**
      * List of keywords indicating positive sentiment.

@@ -1,126 +1,116 @@
-@(video: entities.Video,tags: List[entities.Tag])
+@(video: entities.Video, tags: List[String])
 
 @main("YT Lytics") {
-<style>
-    /* Basic reset and font */
-    body, html {
-        margin: 0;
-        padding: 0;
-        font-family: Arial, sans-serif;
-        background-color: #f0f0f5;
-        color: #333;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        min-height: 100vh;
-    }
+    <style>
+            /* Basic reset and font */
+            body, html {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f5;
+                color: #333;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                min-height: 100vh;
+            }
 
-    /* Welcome title */
-    h1 {
-        font-size: 2.5em;
-        margin: 20px 0;
-        color: #333;
-        text-align: center;
-    }
+            /* Welcome title */
+            h1 {
+                font-size: 2.5em;
+                margin: 20px 0;
+                color: #333;
+                text-align: center;
+            }
 
-    /* Search form */
-    form {
-        display: flex;
-        align-items: center;
-        margin-bottom: 40px;
-    }
-    input[type="text"] {
-        padding: 10px 15px;
-        font-size: 1em;
-        border: 1px solid #ccc;
-        border-radius: 5px 0 0 5px;
-        outline: none;
-        width: 300px;
-    }
-    button {
-        padding: 10px 20px;
-        background-color: #d32f2f;
-        border: none;
-        color: #fff;
-        font-weight: bold;
-        border-radius: 0 5px 5px 0;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-    button:hover {
-        background-color: #b71c1c; /* Hover */
-    }
+            /* Search form */
+            form {
+                display: flex;
+                align-items: center;
+                margin-bottom: 40px;
+            }
+            input[type="text"] {
+                padding: 10px 15px;
+                font-size: 1em;
+                border: 1px solid #ccc;
+                border-radius: 5px 0 0 5px;
+                outline: none;
+                width: 300px;
+            }
+            button {
+                padding: 10px 20px;
+                background-color: #d32f2f;
+                border: none;
+                color: #fff;
+                font-weight: bold;
+                border-radius: 0 5px 5px 0;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+            button:hover {
+                background-color: #b71c1c; /* Hover */
+            }
 
-    /* Search results */
-    h1 + h1 {
-        margin-top: 20px;
-        font-size: 1.5em;
-        color: #666;
-        text-align: center;
-    }
+            /* Tags title */
+            .tags-title {
+                margin-top: 20px;
+                font-size: 1.8em;
+                color: #333;
+                text-align: center;
+            }
 
-    /* Sentiment display */
-    .sentiment {
-        font-size: 1.2em;
-        color: #555;
-        text-align: center;
-        margin-bottom: 20px;
-    }
+            /* Tags container */
+            .tags-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+                margin-top: 20px;
+                max-width: 800px;
+                padding: 0 20px;
+            }
 
-    /* Search results list */
-    ul {
-        list-style-type: none;
-        padding: 0;
-        width: 80%;
-        max-width: 1000px;
-        margin: 0 auto;
-    }
-    li {
-        background-color: #fff; /* White background for each item */
-        margin: 15px 0;
-        padding: 20px;
-        border-radius: 10px;
-        display: flex;
-        align-items: flex-start;
-        color: #333;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    li img {
-        width: 120px;
-        height: 80px;
-        border-radius: 8px;
-        margin-right: 20px;
-    }
-    li h3 {
-        margin: 0;
-        font-size: 1.2em;
-        color: #333; /* Standard dark text color */
-    }
-    li a {
-        text-decoration: none;
-        color: inherit;
-    }
-    li p {
-        margin: 5px 0;
-        font-size: 0.9em;
-    }
-    li p strong {
-        color: #444;
-    }
-</style>
+            /* Individual tag styling */
+            .tag-badge {
+                background-color: #e0e0e0;
+                color: #333;
+                padding: 8px 15px;
+                border-radius: 20px;
+                text-decoration: none;
+                font-size: 0.95em;
+                transition: background-color 0.3s ease, color 0.3s ease;
+                white-space: nowrap;
+            }
+            .tag-badge:hover {
+                background-color: #d32f2f;
+                color: #fff;
+            }
 
-<h1>Welcome to YT Lytics!</h1>
-<form action="/search" method="GET">
-    <input type="text" name="keyword" placeholder="Enter search keywords">
-    <button type="submit">Search</button>
-</form>
+            /* Video title link */
+            .video-title-link {
+                color: #d32f2f;
+                text-decoration: none;
+                transition: color 0.3s ease;
+            }
+            .video-title-link:hover {
+                color: #b71c1c;
+            }
 
-    <h1>Tags for <a href="@video.getVideoURL()">"@video.getTitle()"</a>></h1>
+    </style>
 
+        <!-- Page Content -->
+    <h1>Welcome to YT Lytics!</h1>
+    <form action="/search" method="GET">
+        <input type="text" name="keyword" placeholder="Enter search keywords">
+        <button type="submit">Search</button>
+    </form>
 
+        <!-- Tags Section -->
+    <h1 class="tags-title">Tags for <a class="video-title-link" href="@video.getVideoURL">"@video.getTitle"</a></h1>
+
+    <div class="tags-container">
     @for(tag <- tags) {
-        <a href="@tag.getTagURL">@tag.getName</a><p>  </p>
+        <a class="tag-badge" href="@routes.YoutubeController.search(tag)">@tag</a>
     }
+    </div>
 }
-
