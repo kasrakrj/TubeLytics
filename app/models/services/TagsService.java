@@ -45,7 +45,7 @@ public class TagsService {
 
     // New method to get video details by videoId
     public CompletionStage<Video> getVideoByVideoId(String videoId) {
-        String apiUrl = "https://www.googleapis.com/youtube/v3/videos?part=snippet&id="
+        String apiUrl =youTubeService.getApiUrl()+ "/videos?part=snippet&id="
                 + videoId + "&key=" + youTubeService.getApiKey();
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUrl)).build();
