@@ -1,4 +1,4 @@
-@(keyword: String, videos: List[entities.Video], sentiment: String)
+@(video: entities.Video,tags: List[entities.Tag])
 
 @main("YT Lytics") {
 <style>
@@ -116,22 +116,11 @@
     <button type="submit">Search</button>
 </form>
 
-<h1>Search Results for "@keyword"</h1>
+    <h1>Tags for <a href="@video.getVideoURL()">"@video.getTitle()"</a>></h1>
 
-<div class="sentiment">Overall Sentiment: @sentiment</div>
 
-<ul>
-    @for(video <- videos) {
-    <li>
-        <img src="@video.getThumbnailUrl()" alt="@video.getTitle()"/>
-        <div>
-            <h3><a href="https://www.youtube.com/watch?v=@video.getVideoId()" target="_blank">@video.getTitle()</a></h3>
-            <p>@video.getDescription()</p>
-            <p><strong>Channel:</strong> @video.getChannelTitle()</p>
-            <a href="@video.getTags()" method="GET" style="flex-grow: 1;"><strong>Tags:</strong></a>
-
-        </div>
-    </li>
+    @for(tag <- tags) {
+        <a href="@tag.getTagURL">@tag.getName</a><p>  </p>
     }
-</ul>
 }
+

@@ -1,7 +1,6 @@
 package controllers;
 
 import models.Sentiment;
-import models.services.SearchServiceImpl;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -11,25 +10,28 @@ import java.util.concurrent.CompletionStage;
 
 public class YoutubeController extends Controller {
 
-    private final SearchServiceImpl searchService;
+    private final SearchByKeywordServiceImpl searchService;
     private final Sentiment sentimentAnalyzer;
 
     @Inject
-    public YoutubeController(SearchServiceImpl searchService, Sentiment sentimentAnalyzer) {
+    public YoutubeController(SearchByKeywordServiceImpl searchService, Sentiment sentimentAnalyzer) {
         this.searchService = searchService;
         this.sentimentAnalyzer = sentimentAnalyzer;
     }
 
+
     public Result index() {
         return ok(views.html.index.render());
     }
+
+
 
     public CompletionStage<Result> search(String keyword) {
         if (keyword == null || keyword.isEmpty()) {
             return CompletableFuture.completedFuture(redirect(routes.YoutubeController.index()));
         }
 
-        // Call the SearchServiceImpl to fetch and process video results
+        // Call the SearchByKeywordServiceImpl to fetch and process video results
         return searchService.searchVideos(keyword).getVideos()
                 .thenApply(videos -> {
                     if (videos.isEmpty()) {
