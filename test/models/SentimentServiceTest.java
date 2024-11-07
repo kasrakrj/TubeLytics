@@ -2,19 +2,19 @@ package models;
 
 import models.entities.Video;
 import models.services.SentimentService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
 
 public class SentimentServiceTest {
 
     private SentimentService sentimentAnalyzer;
 
-    @BeforeEach
+    @Before
     public void setUp() {
         sentimentAnalyzer = new SentimentService();
     }
