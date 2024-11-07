@@ -1,0 +1,11 @@
+@(keyword: String, wordCounts: Map[String, Long])
+
+@main("Word Count") {
+    <h1>@keyword</h1>
+
+    <ul>
+    @for((word, count) <- wordCounts) {
+        <li><strong>@word:</strong> @count</li>
+    }
+    </ul>
+}

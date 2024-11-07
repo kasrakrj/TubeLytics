@@ -125,6 +125,11 @@
 <div class="sentiment">
     Sentiment for '@keyword': @individualSentiments(keyword)
 </div>
+
+<div>
+    <a href="@routes.YoutubeController.wordStats(keyword)"> Search Stats </a>
+</div>
+
 <ul>
     @for(video <- videos) {
     <li>
