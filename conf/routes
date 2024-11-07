@@ -7,6 +7,7 @@ GET     /                           controllers.YoutubeController.index()
 GET     /search                     controllers.YoutubeController.search(keyword: String)
 GET     /channel/:channelId        controllers.YoutubeController.channelProfile(channelId: String)
 GET     /wordStats/:keyword         controllers.YoutubeController.wordStats(keyword: String)
+GET     /tags/:videoID         controllers.YoutubeController.tags(videoID: String)
 
 
 # Map static resources from the /public folder to the /assets URL path
