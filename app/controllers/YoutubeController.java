@@ -90,7 +90,6 @@ public class YoutubeController extends Controller {
     public CompletionStage<Result> wordStats(String keyword){
         return youTubeService.searchVideos(keyword).thenApply(videos -> {
             Map<String, Long> wordStats = wordStatService.createWordStats(videos);
-            scala.collection.immutable.Map<String, Long> wordStatsScala = scala.collection.immutable.Map.from(scala.jdk.CollectionConverters.MapHasAsScala(wordStats).asScala());
             return ok(views.html.wordStats.render(keyword, wordStats));
             }).exceptionally(ex -> {
             ex.printStackTrace();
