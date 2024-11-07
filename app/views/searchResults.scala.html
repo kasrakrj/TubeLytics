@@ -135,10 +135,10 @@
     <li>
         <img src="@video.getThumbnailUrl()" alt="Thumbnail">
         <div>
-            <h3>@video.getTitle()</h3>
-            <p>@video.getDescription()</p>
+            <h3><a href="https://www.youtube.com/watch?v=@video.getVideoId" target="_blank">@video.getTitle</a></h3>
+            <p>@video.getDescription</p>
             <!-- Link to channel profile page using channel ID -->
-            <small>Channel: <a href="@routes.YoutubeController.channelProfile(video.getChannelId())">@video.getChannelTitle()</a></small>
+            <small>Channel: <a href="@routes.YoutubeController.channelProfile(video.getChannelId)">@video.getChannelTitle</a></small>
         </div>
     </li>
     }
