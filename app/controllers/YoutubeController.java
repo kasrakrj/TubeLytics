@@ -15,8 +15,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
-import scala.collection.immutable.Map$;
-
 public class YoutubeController extends Controller {
 
     public final int DEFAULT_NUM_OF_RESULTS = 10;
@@ -46,7 +44,7 @@ public class YoutubeController extends Controller {
             return CompletableFuture.completedFuture(redirect(routes.YoutubeController.index()));
         }
 
-        // Fetch videos and then analyze sentiments asynchronously
+        // Fetch 10 videos
         return youTubeService.searchVideos(keyword, DEFAULT_NUM_OF_RESULTS).thenCompose(videos -> {
             // Remove the oldest search if we exceed max search history limit
             if (searchHistory.size() >= MAX_SEARCHES) {
@@ -55,19 +53,20 @@ public class YoutubeController extends Controller {
                 individualSentiments.remove(oldestKeyword);
             }
 
-            // Store the results for the current search
+            // Store the results for current search
             searchHistory.put(keyword, videos);
 
-            // Analyze individual sentiment for the search
+            // Analyze individual sentiment
             return sentimentAnalyzer.avgSentiment(videos).thenCompose(individualSentiment -> {
                 individualSentiments.put(keyword, individualSentiment);
 
-                // Calculate overall sentiment based on all searches in history
+                // Collect videos from recent searches up to a limit of 50
                 List<Video> allVideos = searchHistory.values().stream()
                         .flatMap(List::stream)
+                        .limit(NUM_OF_RESULTS_SENTIMENT) // Limit to 50 videos for sentiment analysis
                         .collect(Collectors.toList());
 
-                // Calculate overall sentiment asynchronously
+                // Calculate overall sentiment asynchronously on the combined set of videos
                 return sentimentAnalyzer.avgSentiment(allVideos).thenApply(overallSentiment ->
                         ok(views.html.searchResults.render(searchHistory, overallSentiment, individualSentiments))
                 );
@@ -78,11 +77,10 @@ public class YoutubeController extends Controller {
         });
     }
 
-
     public CompletionStage<Result> channelProfile(String channelId) {
         // Fetch channel info and videos, then render the profile view
         return youTubeService.getChannelInfo(channelId)
-                .thenCombine(youTubeService.getChannelVideos(channelId, 10), (channelInfo, videos) ->
+                .thenCombine(youTubeService.getChannelVideos(channelId, DEFAULT_NUM_OF_RESULTS), (channelInfo, videos) ->
                         ok(views.html.channelProfile.render(channelInfo, videos))
                 )
                 .exceptionally(ex -> {
@@ -91,14 +89,13 @@ public class YoutubeController extends Controller {
                 });
     }
 
-    public CompletionStage<Result> wordStats(String keyword){
+    public CompletionStage<Result> wordStats(String keyword) {
         return youTubeService.searchVideos(keyword, NUM_OF_RESULTS_WORD_STATS).thenApply(videos -> {
             Map<String, Long> wordStats = wordStatService.createWordStats(videos);
             return ok(views.html.wordStats.render(keyword, wordStats));
-            }).exceptionally(ex -> {
+        }).exceptionally(ex -> {
             ex.printStackTrace();
             return internalServerError(views.html.errorPage.render("An error occurred while fetching word stats."));
-            });
+        });
     }
-
 }
