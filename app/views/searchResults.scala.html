@@ -1,4 +1,4 @@
-@(keyword: String, videos: List[entities.Video], sentiment: String)
+@(searchHistory: Map[String, List[entities.Video]], overallSentiment: String, individualSentiments: Map[String, String])
 
 @main("YT Lytics") {
 <style>
@@ -108,30 +108,40 @@
     li p strong {
         color: #444;
     }
+
 </style>
 
-<h1>Welcome to YT Lytics!</h1>
+<h1>YT Lytics - Search Results</h1>
 <form action="/search" method="GET">
     <input type="text" name="keyword" placeholder="Enter search keywords">
     <button type="submit">Search</button>
 </form>
+<div class="sentiment">
+    Overall Sentiment: @overallSentiment
+</div>
 
-<h1>Search Results for "@keyword"</h1>
+@for((keyword, videos) <- searchHistory.toSeq.reverse) {
+<h2>Search Results for '@keyword'</h2>
+<div class="sentiment">
+    Sentiment for '@keyword': @individualSentiments(keyword)
+</div>
 
-<div class="sentiment">Overall Sentiment: @sentiment</div>
+<div>
+    <a href="@routes.YoutubeController.wordStats(keyword)"> Search Stats </a>
+</div>
 
 <ul>
     @for(video <- videos) {
     <li>
-        <img src="@video.getThumbnailUrl()" alt="@video.getTitle()"/>
+        <img src="@video.getThumbnailUrl()" alt="Thumbnail">
         <div>
-            <h3><a href="https://www.youtube.com/watch?v=@video.getVideoId()" target="_blank">@video.getTitle()</a></h3>
-            <p>@video.getDescription()</p>
-            <p><strong>Channel:</strong> @video.getChannelTitle()</p>
-            <a href="@video.getTags()" method="GET" style="flex-grow: 1;"><strong>Tags:</strong></a>
-
+            <h3><a href="https://www.youtube.com/watch?v=@video.getVideoId" target="_blank">@video.getTitle</a></h3>
+            <p>@video.getDescription</p>
+            <!-- Link to channel profile page using channel ID -->
+            <small>Channel: <a href="@routes.YoutubeController.channelProfile(video.getChannelId)">@video.getChannelTitle</a></small>
         </div>
     </li>
     }
 </ul>
+}
 }

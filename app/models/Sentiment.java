@@ -1,14 +1,21 @@
 package models;
-
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-
 import models.entities.Video;
-
+/**
+ * This is a class to analyze sentiment from YouTube video descriptions
+ * Sentiment would be calculated for each video and the average sentiment of video streams
+ * would be shown as the overall sentiment of each search query
+ *
+ * @author Hosna Habibi
+ */
 public class Sentiment {
 
-    // Happy and Sad keywords lists
+    /**
+     * List of keywords indicating positive sentiment.
+     */
     private static final List<String> HappyWords = Arrays.asList(
             "happy", "joy", "love", "excited", "amazing", "fantastic", "wonderful",
             "awesome", "delight", "fun", "smile", "smiling", "cheerful", "great",
@@ -28,7 +35,9 @@ public class Sentiment {
             "pumped up", "smiles all around", "warm fuzzies", "cheers to that",
             "rejoicing", "truly blessed", "couldn't be happier", "heart full of joy"
     );
-
+    /**
+     * List of keywords indicating negative sentiment.
+     */
     private static final List<String> SadWords = Arrays.asList(
             "sad", "unhappy", "depressed", "anxious", "alone", "heartbroken", "disappointed",
             "lonely", "miserable", "melancholy", "gloomy", "hopeless", "grief", "loss",
@@ -47,51 +56,66 @@ public class Sentiment {
             "deep sadness", "mourning", "unloved", "disillusioned", "discouraged"
     );
 
-    // Method to calculate the sentiment of a single video description
-    private String CalculateSentiment(String description) {
-        long happyCount = HappyWords.stream()
-                .filter(description::contains)
-                .count();
-        long sadCount = SadWords.stream()
-                .filter(description::contains)
-                .count();
-        long totalCount = happyCount + sadCount;
-
-        if (totalCount == 0) {
-            return ":-|";
+    /**
+     * Calculates the sentiment of a description.
+     *
+     * @param description the text description of a video
+     * @return a string representing the sentiment
+     */
+    public String calculateSentiment(String description) {
+        if (description == null || description.isEmpty()) {
+            return ":-|"; // Neutral if description is empty
         }
+        String LowCaseDesc = description.toLowerCase();
+        long happyCount = HappyWords.stream().filter(LowCaseDesc::contains).count();
+        long sadCount = SadWords.stream().filter(LowCaseDesc::contains).count();
 
-        double happyRatio = (double) happyCount / totalCount;
-        double sadRatio = (double) sadCount / totalCount;
+        long totalSentimentWords = happyCount + sadCount;
+        if (totalSentimentWords == 0) return ":-|";
 
-        if (happyRatio > 0.7) {
-            return ":-)";
-        } else if (sadRatio > 0.7) {
-            return ":-(";
-        } else {
-            return ":-|"; // Neutral sentiment
-        }
+        double happyRatio = (double) happyCount / totalSentimentWords;
+        double sadRatio = (double) sadCount / totalSentimentWords;
+
+        if (happyRatio > 0.7) return ":-)";
+        else if (sadRatio > 0.7) return ":-(";
+        else return ":-|";
     }
 
-    // Method to calculate the average sentiment for a list of video descriptions
-    public String AnalyzeSentiment(List<Video> videos) {
-        List<String> sentiments = videos.stream()
-                .map(Video::getDescription)
-                .map(this::CalculateSentiment)
+    /**
+     * Calculate the average sentiment for a list of video descriptions asynchronously.
+     *
+     * @param videos the list of videos we want to analyze their overall sentiment
+     * @return a CompletableFuture<String> representing the overall sentiment asynchronously
+     */
+    public CompletableFuture<String> avgSentiment(List<Video> videos) {
+        if (videos == null || videos.isEmpty()) {
+            return CompletableFuture.completedFuture(":-|"); // Neutral if no videos are present
+        }
+
+        List<CompletableFuture<Integer>> sentimentFutures = videos.stream()
+                .map(video -> CompletableFuture.supplyAsync(() -> calculateSentiment(video.getDescription())))
+                .map(future -> future.thenApply(sentiment -> {
+                    switch (sentiment) {
+                        case ":-)": return 1; // Happy
+                        case ":-(": return -1; // Sad
+                        default: return 0; // Neutral
+                    }
+                }))
                 .collect(Collectors.toList());
 
-        long happyCount = sentiments.stream().filter(":-)"::equals).count();
-        long sadCount = sentiments.stream().filter(":-("::equals).count();
-        long totalCount = sentiments.size();
-        //System.out.println("Happy Count: " + happyCount);
-        //System.out.println("Sad Count: " + sadCount);
-        //System.out.println("Total Count: " + totalCount);
-        if ((double) happyCount / totalCount > 0.7) {
-            return ":-)";
-        } else if ((double) sadCount / totalCount > 0.7) {
-            return ":-(";
-        } else {
-            return ":-|";
-        }
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+                sentimentFutures.toArray(new CompletableFuture[0])
+        );
+
+        return allFutures.thenApply(v -> {
+            double averageScore = sentimentFutures.stream()
+                    .mapToInt(CompletableFuture::join)
+                    .average()
+                    .orElse(0);
+
+            if (averageScore > 0) return ":-)"; // Overall Happy
+            else if (averageScore < 0) return ":-("; // Overall Sad
+            else return ":-|"; // Overall Neutral
+        });
     }
 }
