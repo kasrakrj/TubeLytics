@@ -48,13 +48,13 @@ class YoutubeControllerTest {
                 "http://thumbnail-url.com",
                 "VideoId123",
                 "ChannelID"));
-        when(youTubeService.searchVideos(keyword)).thenReturn(CompletableFuture.completedFuture(mockVideos));
+        when(youTubeService.searchVideos(keyword, youtubeController.DEFAULT_NUM_OF_RESULTS)).thenReturn(CompletableFuture.completedFuture(mockVideos));
 
         CompletionStage<Result> resultStage = youtubeController.search(keyword);
         Result result = resultStage.toCompletableFuture().join();
 
         assertEquals(OK, result.status());
-        verify(youTubeService).searchVideos(keyword);
+        verify(youTubeService).searchVideos(keyword, youtubeController.DEFAULT_NUM_OF_RESULTS);
     }
 
     @Test
@@ -64,7 +64,7 @@ class YoutubeControllerTest {
 
         assertEquals(SEE_OTHER, result.status());
         assertEquals(routes.YoutubeController.index().url(), result.redirectLocation().orElse(""));
-        verify(youTubeService, never()).searchVideos(anyString());
+        verify(youTubeService, never()).searchVideos(anyString(), youtubeController.DEFAULT_NUM_OF_RESULTS);
     }
 
     @Test
@@ -74,30 +74,30 @@ class YoutubeControllerTest {
 
         assertEquals(SEE_OTHER, result.status());
         assertEquals(routes.YoutubeController.index().url(), result.redirectLocation().orElse(""));
-        verify(youTubeService, never()).searchVideos(anyString());
+        verify(youTubeService, never()).searchVideos(anyString(), youtubeController.DEFAULT_NUM_OF_RESULTS);
     }
 
     @Test
     void testSearchWithNoResults() {
         String keyword = "noresults";
-        when(youTubeService.searchVideos(keyword)).thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
+        when(youTubeService.searchVideos(keyword, youtubeController.DEFAULT_NUM_OF_RESULTS)).thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
 
         CompletionStage<Result> resultStage = youtubeController.search(keyword);
         Result result = resultStage.toCompletableFuture().join();
 
         assertEquals(OK, result.status());
-        verify(youTubeService).searchVideos(keyword);
+        verify(youTubeService).searchVideos(keyword, youtubeController.DEFAULT_NUM_OF_RESULTS);
     }
 
     @Test
     void testSearchWithException() {
         String keyword = "error";
-        when(youTubeService.searchVideos(keyword)).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Service failure")));
+        when(youTubeService.searchVideos(keyword, youtubeController.DEFAULT_NUM_OF_RESULTS)).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Service failure")));
 
         CompletionStage<Result> resultStage = youtubeController.search(keyword);
         Result result = resultStage.toCompletableFuture().join();
 
         assertEquals(INTERNAL_SERVER_ERROR, result.status());
-        verify(youTubeService).searchVideos(keyword);
+        verify(youTubeService).searchVideos(keyword, youtubeController.DEFAULT_NUM_OF_RESULTS);
     }
 }

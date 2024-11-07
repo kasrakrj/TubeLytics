@@ -19,6 +19,10 @@ import scala.collection.immutable.Map$;
 
 public class YoutubeController extends Controller {
 
+    public final int DEFAULT_NUM_OF_RESULTS = 10;
+    public final int NUM_OF_RESULTS_WORD_STATS = 50;
+    public final int NUM_OF_RESULTS_SENTIMENT = 50;
+
     private final YouTubeService youTubeService;
     private final Sentiment sentimentAnalyzer;
     private final WordStatService wordStatService;
@@ -43,7 +47,7 @@ public class YoutubeController extends Controller {
         }
 
         // Fetch videos and then analyze sentiments asynchronously
-        return youTubeService.searchVideos(keyword).thenCompose(videos -> {
+        return youTubeService.searchVideos(keyword, DEFAULT_NUM_OF_RESULTS).thenCompose(videos -> {
             // Remove the oldest search if we exceed max search history limit
             if (searchHistory.size() >= MAX_SEARCHES) {
                 String oldestKeyword = searchHistory.keySet().iterator().next();
@@ -88,7 +92,7 @@ public class YoutubeController extends Controller {
     }
 
     public CompletionStage<Result> wordStats(String keyword){
-        return youTubeService.searchVideos(keyword).thenApply(videos -> {
+        return youTubeService.searchVideos(keyword, NUM_OF_RESULTS_WORD_STATS).thenApply(videos -> {
             Map<String, Long> wordStats = wordStatService.createWordStats(videos);
             return ok(views.html.wordStats.render(keyword, wordStats));
             }).exceptionally(ex -> {

@@ -15,14 +15,14 @@ import java.util.concurrent.CompletionStage;
 public class YouTubeService {
 
     private static final String API_KEY = "AIzaSyBCYzFvdDbkPslgU8WvAqX_dMk9RHMG1Ug";
-    private static final String YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=";
+    private static final String YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=";
     private static final String YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=";
     private static final String YOUTUBE_CHANNEL_VIDEOS_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&channelId=";
 
     // Method to call the YouTube API and process the response
-    public CompletionStage<List<Video>> searchVideos(String keyword) {
+    public CompletionStage<List<Video>> searchVideos(String keyword, int numOfResults) {
         String encodedKeyword = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
-        String apiUrl = YOUTUBE_SEARCH_URL + encodedKeyword + "&key=" + API_KEY;
+        String apiUrl = YOUTUBE_SEARCH_URL + numOfResults + "&q=" + encodedKeyword + "&key=" + API_KEY;
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUrl)).build();
