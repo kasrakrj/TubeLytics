@@ -1,6 +1,8 @@
 package models;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import models.entities.Video;
 /**
  * This is a class to analyze sentiment from YouTube video descriptions
@@ -53,94 +55,67 @@ public class Sentiment {
             "burden", "devastation", "low spirits", "disconnected", "abandoned hope",
             "deep sadness", "mourning", "unloved", "disillusioned", "discouraged"
     );
+
     /**
      * Calculates the sentiment of a description.
      *
      * @param description the text description of a video
      * @return a string representing the sentiment
      */
-    private String calculateSentiment(String description) {
+    public String calculateSentiment(String description) {
         if (description == null || description.isEmpty()) {
             return ":-|"; // Neutral if description is empty
         }
-        //Turning description to lowercase format.
         String LowCaseDesc = description.toLowerCase();
-        //Counting happy words of the given description.
-        long happyCount = HappyWords.stream()
-                .filter(LowCaseDesc::contains)
-                .count();
-        //Counting sad words of the given description.
-        long sadCount = SadWords.stream()
-                .filter(LowCaseDesc::contains)
-                .count();
+        long happyCount = HappyWords.stream().filter(LowCaseDesc::contains).count();
+        long sadCount = SadWords.stream().filter(LowCaseDesc::contains).count();
 
         long totalSentimentWords = happyCount + sadCount;
+        if (totalSentimentWords == 0) return ":-|";
 
-        // If no sentiment words -> return neutral
-        if (totalSentimentWords == 0) {
-            return ":-|";
-        }
-
-        // Calculate ratios
         double happyRatio = (double) happyCount / totalSentimentWords;
         double sadRatio = (double) sadCount / totalSentimentWords;
 
-
-       /* System.out.println("Description: " + description);
-        System.out.println("Happy Count: " + happyCount);
-        System.out.println("Sad Count: " + sadCount);
-        System.out.println("Total Sentiment Words: " + totalSentimentWords);
-        System.out.println("Happy Ratio: " + happyRatio);
-        System.out.println("Sad Ratio: " + sadRatio);*/
-
-        // Determine sentiment based on the ratios with given thresholds
-        if (happyRatio > 0.7) {
-            // System.out.println("Individual: :-)");
-            return ":-)";
-        } else if (sadRatio > 0.7) {
-            // System.out.println("Individual: :-(");
-            return ":-(";
-        } else {
-            // System.out.println("Individual: :-|");
-            return ":-|";
-        }
+        if (happyRatio > 0.7) return ":-)";
+        else if (sadRatio > 0.7) return ":-(";
+        else return ":-|";
     }
+
     /**
-     * Calculate the average sentiment for a list of video descriptions
+     * Calculate the average sentiment for a list of video descriptions asynchronously.
      *
      * @param videos the list of videos we want to analyze their overall sentiment
-     * @return a string representing the sentiment
+     * @return a CompletableFuture<String> representing the overall sentiment asynchronously
      */
-    public String AnalyzeSentiment(List<Video> videos) {
+    public CompletableFuture<String> avgSentiment(List<Video> videos) {
         if (videos == null || videos.isEmpty()) {
-            return ":-|"; // Neutral if no videos are present
+            return CompletableFuture.completedFuture(":-|"); // Neutral if no videos are present
         }
 
-        double averageScore = videos.stream()
-                .map(Video::getDescription)
-                .map(this::calculateSentiment)
-                .mapToInt(sentiment -> {
+        List<CompletableFuture<Integer>> sentimentFutures = videos.stream()
+                .map(video -> CompletableFuture.supplyAsync(() -> calculateSentiment(video.getDescription())))
+                .map(future -> future.thenApply(sentiment -> {
                     switch (sentiment) {
-                        case ":-)": return 1;   // Happy
-                        case ":-(": return -1;  // Sad
-                        default: return 0;      // Neutral
+                        case ":-)": return 1; // Happy
+                        case ":-(": return -1; // Sad
+                        default: return 0; // Neutral
                     }
-                })
-                .average()
-                .orElse(0); // default -> 0
+                }))
+                .collect(Collectors.toList());
 
-        //System.out.println("Average Score: " + averageScore);
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+                sentimentFutures.toArray(new CompletableFuture[0])
+        );
 
-        // Determine the overall sentiment
-        if (averageScore > 0) {
-            //  System.out.println("Overall: :-)");
-            return ":-)"; // Overall Happy
-        } else if (averageScore < 0) {
-            // System.out.println("Overall: :-(");
-            return ":-("; // Overall Sad
-        } else {
-            // System.out.println("Overall: :-|");
-            return ":-|"; // Overall Neutral
-        }
+        return allFutures.thenApply(v -> {
+            double averageScore = sentimentFutures.stream()
+                    .mapToInt(CompletableFuture::join)
+                    .average()
+                    .orElse(0);
+
+            if (averageScore > 0) return ":-)"; // Overall Happy
+            else if (averageScore < 0) return ":-("; // Overall Sad
+            else return ":-|"; // Overall Neutral
+        });
     }
 }
