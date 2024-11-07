@@ -76,6 +76,7 @@ public class YoutubeController extends Controller {
                 // Calculate overall sentiment based on all searches in history
                 List<Video> allVideos = searchHistory.values().stream()
                         .flatMap(List::stream)
+                        .limit(NUM_OF_RESULTS_SENTIMENT)
                         .collect(Collectors.toList());
 
                 // Calculate overall sentiment asynchronously
