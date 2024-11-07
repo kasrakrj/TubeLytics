@@ -116,9 +116,6 @@
     <input type="text" name="keyword" placeholder="Enter search keywords">
     <button type="submit">Search</button>
 </form>
-<div class="sentiment">
-    Overall Sentiment: @overallSentiment
-</div>
 
 @for((keyword, videos) <- searchHistory.toSeq.reverse) {
 <h2>Search Results for '@keyword'</h2>
