@@ -1,9 +1,11 @@
 package models.services;
 
 import models.entities.Video;
+import models.services.SessionManagerService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import javax.inject.Inject;
 import java.net.URLEncoder;
 import java.net.http.*;
 import java.net.URI;
@@ -18,11 +20,14 @@ public class SearchService {
     private final String API_KEY = youTubeService.getApiKey();
     private final String API_URL = youTubeService.getApiUrl();
     private final String YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
-
     private static final int MAX_SEARCHES = 10;
 
-    // Search history map: keyword -> videos
-    private final LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
+    private final SessionManagerService sessionManagerService;
+
+    @Inject
+    public SearchService(SessionManagerService sessionManagerService) {
+        this.sessionManagerService = sessionManagerService;
+    }
 
     // Method to call the YouTube API and process the response
     public CompletionStage<List<Video>> searchVideos(String keyword, int numOfResults) {
@@ -43,28 +48,17 @@ public class SearchService {
     }
 
     // Method to add search results to the search history
-    public void addSearchResult(String keyword, List<Video> videos) {
-        // Remove the oldest search if the limit is reached
-        if (searchHistory.size() >= MAX_SEARCHES) {
-            Iterator<String> iterator = searchHistory.keySet().iterator();
-            if (iterator.hasNext()) {
-                iterator.next();
-                iterator.remove();
-            }
-        }
-        searchHistory.put(keyword, videos);
+    public void addSearchResult(String sessionId, String keyword, List<Video> videos) {
+        sessionManagerService.addSearchResult(sessionId, keyword, videos);
     }
 
     // Retrieve the search history
-    public Map<String, List<Video>> getSearchHistory() {
-        return new LinkedHashMap<>(searchHistory);
+    public Map<String, List<Video>> getSearchHistory(String sessionId) {
+        return sessionManagerService.getSearchHistory(sessionId);
     }
 
     // Get all videos from search history for sentiment analysis
-    public List<Video> getAllVideosForSentiment(int limit) {
-        return searchHistory.values().stream()
-                .flatMap(List::stream)
-                .limit(limit)
-                .collect(Collectors.toList());
+    public List<Video> getAllVideosForSentiment(String sessionId, int limit) {
+        return sessionManagerService.getAllVideosForSentiment(sessionId, limit);
     }
 }
