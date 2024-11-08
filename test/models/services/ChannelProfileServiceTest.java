@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class ChannelProfileServiceTest {
@@ -46,7 +46,6 @@ public class ChannelProfileServiceTest {
 
     @Test
     public void testGetChannelInfo() throws Exception {
-        // Arrange
         String channelId = "testChannelId";
         when(youTubeService.getApiUrl()).thenReturn("http://api.youtube.com");
         when(youTubeService.getApiKey()).thenReturn("testApiKey");
@@ -58,10 +57,8 @@ public class ChannelProfileServiceTest {
                 .thenReturn(futureResponse);
         when(httpResponse.body()).thenReturn(responseBody);
 
-        // Act
         CompletionStage<JSONObject> result = channelProfileService.getChannelInfo(channelId);
 
-        // Assert
         JSONObject snippet = result.toCompletableFuture().get();
         assertEquals("Test Video", snippet.getString("title"));
         assertEquals("Test Description", snippet.getString("description"));
@@ -72,4 +69,44 @@ public class ChannelProfileServiceTest {
         )), eq(HttpResponse.BodyHandlers.ofString()));
     }
 
+    @Test
+    public void testGetChannelVideos() throws Exception {
+        String channelId = "testChannelId";
+        int maxResults = 10;
+        when(youTubeService.getApiUrl()).thenReturn("http://api.youtube.com");
+        when(youTubeService.getApiKey()).thenReturn("testApiKey");
+
+        String responseBody = "{\"items\":[{\"snippet\":{\"title\":\"Test Video 1\",\"description\":\"Test Description 1\"}}," +
+                "{\"snippet\":{\"title\":\"Test Video 2\",\"description\":\"Test Description 2\"}}]}";
+
+        CompletableFuture<HttpResponse<String>> futureResponse = CompletableFuture.completedFuture(httpResponse);
+        when(httpClient.sendAsync(any(HttpRequest.class), eq(HttpResponse.BodyHandlers.ofString())))
+                .thenReturn(futureResponse);
+        when(httpResponse.body()).thenReturn(responseBody);
+
+        List<Video> mockVideoList = mock(List.class);
+        when(youTubeService.parseVideos(any(JSONArray.class))).thenReturn(mockVideoList);
+
+        CompletionStage<List<Video>> result = channelProfileService.getChannelVideos(channelId, maxResults);
+
+        List<Video> videos = result.toCompletableFuture().get();
+        assertEquals(mockVideoList, videos);
+
+        // Verify the correct URL was called
+        verify(httpClient).sendAsync(argThat(request -> request.uri().toString().equals(
+                "http://api.youtube.com/search?part=snippet&type=video&channelId=" + channelId +
+                        "&maxResults=" + maxResults + "&key=testApiKey"
+        )), eq(HttpResponse.BodyHandlers.ofString()));
+
+        // Verify parseVideos was called with any JSONArray
+        verify(youTubeService).parseVideos(any(JSONArray.class));
+    }
+
+    @Test
+    public void testCreateHttpClient() {
+        ChannelProfileService service = new ChannelProfileService(youTubeService);
+        HttpClient client = service.createHttpClient();
+        assertNotNull("HttpClient should not be null", client);
+        assertTrue("Returned object should be an instance of HttpClient", client instanceof HttpClient);
+    }
 }
