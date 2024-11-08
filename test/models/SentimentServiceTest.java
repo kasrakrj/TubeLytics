@@ -1,20 +1,22 @@
-import models.Sentiment;
+package models;
+
 import models.entities.Video;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import models.services.SentimentService;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
 
-public class SentimentTest {
+public class SentimentServiceTest {
 
-    private Sentiment sentimentAnalyzer;
+    private SentimentService sentimentAnalyzer;
 
-    @BeforeEach
+    @Before
     public void setUp() {
-        sentimentAnalyzer = new Sentiment();
+        sentimentAnalyzer = new SentimentService();
     }
 
     // Test for positive sentiment
@@ -56,9 +58,9 @@ public class SentimentTest {
     @Test
     public void testAnalyzeSentiment_MixedVideos() {
         List<Video> videos = List.of(
-                new Video("Positive Video", "I am so happy!", "Channel 1", "url1", "id1","channelId1"),
-                new Video("Negative Video", "This is a sad story", "Channel 2", "url2", "id2","channelId2"),
-                new Video("Neutral Video", "Just an ordinary day.", "Channel 3", "url3", "id3","channelId3")
+                new Video("Positive Video", "I am so happy!", "Channel 1", "url1", "id1","channelId1","urlv1"),
+                new Video("Negative Video", "This is a sad story", "Channel 2", "url2", "id2","channelId2","urlv2"),
+                new Video("Neutral Video", "Just an ordinary day.", "Channel 3", "url3", "id3","channelId3","urlv3")
         );
 
         CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
@@ -69,9 +71,9 @@ public class SentimentTest {
     @Test
     public void testAnalyzeSentiment_AllPositiveVideos() {
         List<Video> videos = List.of(
-                new Video("Positive Video 1", "I am happy", "Channel 1", "url1", "id1","channelId1"),
-                new Video("Positive Video 2", "Such a joyful day!", "Channel 2", "url2", "id2","channelId2"),
-                new Video("Positive Video 3", "Life is amazing!", "Channel 3", "url3", "id3","channelId3")
+                new Video("Positive Video 1", "I am happy", "Channel 1", "url1", "id1","channelId1","urlv1"),
+                new Video("Positive Video 2", "Such a joyful day!", "Channel 2", "url2", "id2","channelId2","urlv2"),
+                new Video("Positive Video 3", "Life is amazing!", "Channel 3", "url3", "id3","channelId3","urlv3")
         );
 
         CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
@@ -82,9 +84,9 @@ public class SentimentTest {
     @Test
     public void testAnalyzeSentiment_AllNegativeVideos() {
         List<Video> videos = List.of(
-                new Video("Negative Video 1", "I am sad", "Channel 1", "url1", "id1","channelId1"),
-                new Video("Negative Video 2", "This is disappointing", "Channel 2", "url2", "id2","channelId2"),
-                new Video("Negative Video 3", "Feeling very down", "Channel 3", "url3", "id3","channelId3")
+                new Video("Negative Video 1", "I am sad", "Channel 1", "url1", "id1","channelId1","urlv1"),
+                new Video("Negative Video 2", "This is disappointing", "Channel 2", "url2", "id2","channelId2","urlv2"),
+                new Video("Negative Video 3", "Feeling very down", "Channel 3", "url3", "id3","channelId3","urlv3")
         );
 
         CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
@@ -95,9 +97,9 @@ public class SentimentTest {
     @Test
     public void testAnalyzeSentiment_AllNeutralVideos() {
         List<Video> videos = List.of(
-                new Video("Neutral Video 1", "An ordinary day", "Channel 1", "url1", "id1","channelId1"),
-                new Video("Neutral Video 2", "Just a regular update", "Channel 2", "url2", "id2","channelId2"),
-                new Video("Neutral Video 3", "Nothing much happened", "Channel 3", "url3", "id3","channelId3")
+                new Video("Neutral Video 1", "An ordinary day", "Channel 1", "url1", "id1","channelId1","urlv1"),
+                new Video("Neutral Video 2", "Just a regular update", "Channel 2", "url2", "id2","channelId2","urlv2"),
+                new Video("Neutral Video 3", "Nothing much happened", "Channel 3", "url3", "id3","channelId3","urlv3")
         );
 
         CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
