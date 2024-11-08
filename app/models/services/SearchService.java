@@ -15,7 +15,7 @@ public class SearchService {
     YouTubeService youTubeService = new YouTubeService();
     private final String API_KEY = youTubeService.getApiKey();
     private final String API_URL = youTubeService.getApiUrl();
-    private final String YOUTUBE_SEARCH_URL = API_URL+"/search?part=snippet&type=video&maxResults=";
+    private final String YOUTUBE_SEARCH_URL = API_URL+"/search?part=snippet&order=date&type=video&maxResults=";
 
 
     // Method to call the YouTube API and process the response

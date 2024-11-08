@@ -11,14 +11,20 @@ import java.util.stream.Collectors;
 public class WordStatService {
     public Map<String, Long> createWordStats(List<Video> videos){
 
-        return videos.stream().map(Video::getTitle).map(string -> string.split(" ")).flatMap(Arrays::stream).map(String::toLowerCase).collect(Collectors.groupingBy(word -> word, Collectors.counting())).entrySet()
-                .stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())      // Sort by count in descending order
+        return videos.stream().map(Video::getTitle)     // Map the videos to their titles
+                .map(string -> string.split(" "))   // Split the string into arrays of words
+                .flatMap(Arrays::stream)    // Split the arrays into the stream
+                .map(String::toLowerCase)   // Convert to lowercase
+                .map(s -> s.replaceAll("[^a-zA-Z0-9]", ""))   // Remove special characters
+                .filter(word -> !word.isEmpty())    // Remove empty strings
+                .collect(Collectors.groupingBy(word -> word, Collectors.counting())).entrySet().stream()    // Count occurrences of each word
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())     // Sort by count in descending order
+                .filter(entry -> entry.getValue() > 1)    // Filter out words that appear only once
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
                         (e1, e2) -> e1,
-                        LinkedHashMap::new));
+                        LinkedHashMap::new));   // Collect the sorted results into a LinkedHashMap
 
     }
 }

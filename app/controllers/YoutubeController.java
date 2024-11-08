@@ -38,8 +38,8 @@ public class YoutubeController extends Controller {
         this.tagsService = tagsService;
     }
 
-    public Result index() {
-        return ok(views.html.index.render());
+    public CompletionStage<Result> index() {
+        return CompletableFuture.completedFuture(ok(views.html.index.render()));
     }
     public CompletionStage<Result> tags(String videoID) {
         return tagsService.getVideoByVideoId(videoID).thenCompose(video -> {
