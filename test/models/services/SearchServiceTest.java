@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 
 public class SearchServiceTest {
 
-    private SearchService searchService;
+    private SearchService mockSearchService;
     private YouTubeService mockYouTubeService;
     private HttpClient mockHttpClient;
     private HttpResponse<String> mockResponse;
@@ -29,7 +29,7 @@ public class SearchServiceTest {
     @Before
     public void setUp() {
         mockYouTubeService = Mockito.mock(YouTubeService.class);
-        searchService = Mockito.mock(SearchService.class);
+        mockSearchService = Mockito.mock(SearchService.class);
         mockHttpClient = Mockito.mock(HttpClient.class);
         mockResponse = Mockito.mock(HttpResponse.class);
     }
@@ -76,10 +76,10 @@ public class SearchServiceTest {
         when(mockYouTubeService.parseVideos(items)).thenReturn(expectedVideos);
 
         // Define behavior for searchService.searchVideos
-        when(searchService.searchVideos(anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(expectedVideos));
+        when(mockSearchService.searchVideos(anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(expectedVideos));
 
         // Execute the method
-        CompletionStage<List<Video>> videosFuture = searchService.searchVideos("test keyword", 2);
+        CompletionStage<List<Video>> videosFuture = mockSearchService.searchVideos("test keyword", 2);
 
         // Verify the result
         videosFuture.thenAccept(videos -> {

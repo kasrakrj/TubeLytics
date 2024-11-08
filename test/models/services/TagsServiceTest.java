@@ -26,8 +26,8 @@ public class TagsServiceTest {
 
     @Before
     public void setUp() {
-        mockYouTubeService = Mockito.mock(YouTubeService.class);
         mockTagsService = Mockito.mock(TagsService.class);
+        mockYouTubeService = Mockito.mock(YouTubeService.class);
         mockHttpClient = Mockito.mock(HttpClient.class);
         mockResponse = Mockito.mock(HttpResponse.class);
     }
@@ -65,12 +65,11 @@ public class TagsServiceTest {
         CompletionStage<List<String>> tagsFuture = mockTagsService.getTagsByVideo(video);
 
         // Verify the result
-        tagsFuture.thenAccept(tags -> {
-            assertNotNull(tags);
-            assertEquals(2, tags.size());
-            assertTrue(tags.contains("tag1"));
-            assertTrue(tags.contains("tag2"));
-        });
+        List<String> tags = tagsFuture.toCompletableFuture().get(); // Blocking to ensure completion for the test
+        assertNotNull(tags);
+        assertEquals(2, tags.size());
+        assertTrue(tags.contains("tag1"));
+        assertTrue(tags.contains("tag2"));
     }
 
     @Test
@@ -107,16 +106,15 @@ public class TagsServiceTest {
         CompletionStage<Video> videoFuture = mockTagsService.getVideoByVideoId("sampleVideoId");
 
         // Verify the result
-        videoFuture.thenAccept(video -> {
-            assertNotNull(video);
-            assertEquals("Sample Video Title", video.getTitle());
-            assertEquals("Sample Description", video.getDescription());
-            assertEquals("Sample Channel", video.getChannelTitle());
-            assertEquals("https://thumbnail.url", video.getThumbnailUrl());
-            assertEquals("sampleVideoId", video.getVideoId());
-            assertEquals("sampleChannelId", video.getChannelId());
-            assertEquals("https://www.youtube.com/watch?v=sampleVideoId", video.getVideoURL());
-        });
+        Video video = videoFuture.toCompletableFuture().get(); // Blocking to ensure completion for the test
+        assertNotNull(video);
+        assertEquals("Sample Video Title", video.getTitle());
+        assertEquals("Sample Description", video.getDescription());
+        assertEquals("Sample Channel", video.getChannelTitle());
+        assertEquals("https://thumbnail.url", video.getThumbnailUrl());
+        assertEquals("sampleVideoId", video.getVideoId());
+        assertEquals("sampleChannelId", video.getChannelId());
+        assertEquals("https://www.youtube.com/watch?v=sampleVideoId", video.getVideoURL());
     }
 
 }

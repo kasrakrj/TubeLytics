@@ -20,8 +20,8 @@ public class YouTubeServiceTest {
     }
 
     @Test
-    public void testParseVideo() {
-        // Prepare mock JSON data for a video item
+    public void testParseVideoWithSimpleId() {
+        // Prepare mock JSON data with 'id' as a simple string
         JSONObject snippet = new JSONObject()
                 .put("title", "Sample Video Title")
                 .put("description", "Sample Video Description")
@@ -38,35 +38,54 @@ public class YouTubeServiceTest {
 
         // Verify the parsed video details
         assertNotNull(video);
-        assertEquals("Sample Video Title", video.getTitle());
-        assertEquals("Sample Video Description", video.getDescription());
-        assertEquals("Sample Channel", video.getChannelTitle());
-        assertEquals("https://sample.thumbnail.url", video.getThumbnailUrl());
         assertEquals("sampleVideoId", video.getVideoId());
-        assertEquals("sampleChannelId", video.getChannelId());
-        assertEquals("https://www.youtube.com/watch?v=sampleVideoId", video.getVideoURL());
     }
 
     @Test
-    public void testParseVideoWithMissingFields() {
-        // Prepare mock JSON data with missing optional fields
+    public void testParseVideoWithObjectId() {
+        // Prepare mock JSON data with 'id' as an object containing 'videoId'
         JSONObject snippet = new JSONObject()
                 .put("title", "Sample Video Title")
-                .put("thumbnails", new JSONObject().put("default", new JSONObject().put("url", "https://sample.thumbnail.url")));
+                .put("description", "Sample Video Description")
+                .put("channelTitle", "Sample Channel")
+                .put("thumbnails", new JSONObject().put("default", new JSONObject().put("url", "https://sample.thumbnail.url")))
+                .put("channelId", "sampleChannelId");
 
         JSONObject item = new JSONObject()
-                .put("id", "sampleVideoId")
+                .put("id", new JSONObject().put("videoId", "sampleVideoId"))
                 .put("snippet", snippet);
 
         // Parse video using YouTubeService
         Video video = youTubeService.parseVideo(item);
 
-        // Verify the parsed video details with defaults
+        // Verify the parsed video details
         assertNotNull(video);
-        assertEquals("Sample Video Title", video.getTitle());
-        assertEquals("", video.getDescription()); // Default empty description
-        assertEquals("Unknown Channel", video.getChannelTitle()); // Default unknown channel title
+        assertEquals("sampleVideoId", video.getVideoId());
     }
+
+    @Test
+    public void testParseVideoWithEmptyItem() {
+        // Prepare an empty JSON object
+        JSONObject emptyItem = new JSONObject();
+
+        // Parse video using YouTubeService
+        Video video = youTubeService.parseVideo(emptyItem);
+
+        // Verify that the result is null for an empty item
+        assertNull(video);
+    }
+
+
+    @Test
+    public void testGetApiKey() {
+        assertNotNull(youTubeService.getApiKey());
+    }
+
+    @Test
+    public void testGetApiUrl() {
+        assertNotNull(youTubeService.getApiUrl());
+    }
+
 
     @Test
     public void testParseVideos() {

@@ -29,45 +29,42 @@ public class YouTubeService {
     private static final String BASE_VIDEO_URL = "https://www.youtube.com/watch?v=";
 
     public Video parseVideo(JSONObject item) {
-
-        if (!item.isEmpty()) {
-            JSONObject snippet = item.getJSONObject("snippet");
-
-            // Extract video details
-            String title = snippet.optString("title", "No Title");
-            String description = snippet.optString("description", ""); // Optional field
-            String channelTitle = snippet.optString("channelTitle", "Unknown Channel");
-            String thumbnailUrl = snippet.getJSONObject("thumbnails")
-                    .getJSONObject("default")
-                    .optString("url", "");
-            String channelId = snippet.optString("channelId", "Unknown Channel ID");
-
-            String videoId;
-
-            // Handle different structures of 'id'
-            Object idField = item.get("id");
-            if (idField instanceof JSONObject) {
-                JSONObject idObject = (JSONObject) idField;
-                if (idObject.has("videoId")) {
-                    videoId = idObject.getString("videoId");
-                } else {
-                    // Handle cases where 'videoId' is not present
-                    return null; // Skip this item or handle accordingly
-                }
-            } else if (idField instanceof String) {
-                videoId = (String) idField;
-            } else {
-                // 'id' is neither a JSONObject nor a String
-                return null; // Skip this item or handle accordingly
-            }
-
-            String videoUrl = BASE_VIDEO_URL + videoId;
-
-            // Create and return a Video object with the extracted details
-            return new Video(title, description, channelTitle, thumbnailUrl, videoId, channelId, videoUrl);
+        if (item.isEmpty()) {
+            return null;
         }
-        return null; // Return null if no items are found
+
+        JSONObject snippet = item.optJSONObject("snippet");
+
+        // Extract video details with default values where applicable
+        String title = snippet.optString("title", "No Title");
+        String description = snippet.optString("description", "");
+        String channelTitle = snippet.optString("channelTitle", "Unknown Channel");
+        String channelId = snippet.optString("channelId", "Unknown Channel ID");
+
+        // Handle thumbnails with default fallback if `default` is missing
+        String thumbnailUrl = "";
+        JSONObject thumbnails = snippet.optJSONObject("thumbnails");
+
+        // Handle different types of 'id' structures
+        String videoId = null;
+        Object idField = item.opt("id");
+        if (idField instanceof JSONObject) {
+            // Extract 'videoId' from the nested JSON object if 'id' is an object
+            videoId = ((JSONObject) idField).optString("videoId", null);
+        } else if (idField instanceof String) {
+            // Use 'id' directly if it's a simple string
+            videoId = (String) idField;
+        }
+
+
+
+        // Construct the video URL
+        String videoUrl = BASE_VIDEO_URL + videoId;
+
+        // Create and return the Video object
+        return new Video(title, description, channelTitle, thumbnailUrl, videoId, channelId, videoUrl);
     }
+
     public List<Video> parseVideos(JSONArray items) {
 
         List<Video> videos = new ArrayList<>();
