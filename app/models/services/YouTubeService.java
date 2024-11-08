@@ -40,10 +40,10 @@ public class YouTubeService {
         String description = snippet.optString("description", "");
         String channelTitle = snippet.optString("channelTitle", "Unknown Channel");
         String channelId = snippet.optString("channelId", "Unknown Channel ID");
-
+        String thumbnailUrl = snippet.optJSONObject("thumbnails")
+                .optJSONObject("default")
+                .optString("url", "");
         // Handle thumbnails with default fallback if `default` is missing
-        String thumbnailUrl = "";
-        JSONObject thumbnails = snippet.optJSONObject("thumbnails");
 
         // Handle different types of 'id' structures
         String videoId = null;
