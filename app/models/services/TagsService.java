@@ -16,11 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class TagsService {
-    private final YouTubeService youTubeService;
-
-    public TagsService() {
-        this.youTubeService = new YouTubeService();
-    }
+   YouTubeService youTubeService = new YouTubeService();
 
     public CompletionStage<List<String>> getTagsByVideo(Video video) {
 

@@ -1,7 +1,6 @@
-package models;
+package models.services;
 
 import models.entities.Video;
-import models.services.SentimentService;
 import org.junit.Before;
 import org.junit.Test;
 
