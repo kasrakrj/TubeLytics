@@ -1,11 +1,66 @@
 @(keyword: String, wordCounts: Map[String, Long])
 
-@main("Word Count") {
-    <h1>@keyword</h1>
+    @main("Word Count") {
+        <style>
+                /* Basic reset and font */
+                body, html {
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial, sans-serif;
+                    background-color: #f0f0f5;
+                    color: #333;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-direction: column;
+                    min-height: 100vh;
+                }
 
-    <ul>
-    @for((word, count) <- wordCounts) {
-        <li><strong>@word:</strong> @count</li>
+                /* Title styling */
+                h1 {
+                    font-size: 2.5em;
+                    margin: 20px 0;
+                    color: #333;
+                    text-align: center;
+                }
+
+                /* Word count list */
+                ul {
+                    list-style-type: none;
+                    padding: 0;
+                    width: 80%;
+                    max-width: 800px;
+                    margin: 20px auto;
+                }
+                li {
+                    background-color: #fff;
+                    margin: 10px 0;
+                    padding: 15px;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    color: #333;
+                }
+                li strong {
+                    font-size: 1.1em;
+                    color: #333;
+                }
+                li span {
+                    font-size: 1em;
+                    color: #555;
+                }
+        </style>
+
+        <h1>Word stats for "@keyword"</h1>
+
+        <ul>
+        @for((word, count) <- wordCounts.toSeq.sortBy(-_._2)) {
+            <li>
+                <strong>@word</strong>
+                <span>@count</span>
+            </li>
+        }
+        </ul>
     }
-    </ul>
-}
