@@ -24,7 +24,7 @@
         text-align: center;
     }
 
-    /* Search form */
+    /* SearchResult form */
     form {
         display: flex;
         align-items: center;
@@ -52,7 +52,7 @@
         background-color: #b71c1c; /* Hover */
     }
 
-    /* Search results */
+    /* SearchResult results */
     h1 + h1 {
         margin-top: 20px;
         font-size: 1.5em;
@@ -68,7 +68,7 @@
         margin-bottom: 20px;
     }
 
-    /* Search results list */
+    /* SearchResult results list */
     ul {
         list-style-type: none;
         padding: 0;
@@ -111,20 +111,20 @@
 
 </style>
 
-<h1>YT Lytics - Search Results</h1>
+<h1>YT Lytics - SearchResult Results</h1>
 <form action="/search" method="GET">
     <input type="text" name="keyword" placeholder="Enter search keywords">
-    <button type="submit">Search</button>
+    <button type="submit">SearchResult</button>
 </form>
 
 @for((keyword, videos) <- searchHistory.toSeq.reverse) {
-<h2>Search Results for '@keyword'</h2>
+<h2>SearchResult Results for '@keyword'</h2>
 <div class="sentiment">
     Sentiment for '@keyword': @individualSentiments(keyword)
 </div>
 
 <div>
-    <a href="@routes.YoutubeController.wordStats(keyword)"> Search Stats </a>
+    <a href="@routes.YoutubeController.wordStats(keyword)"> SearchResult Stats </a>
 </div>
 
 <ul>
