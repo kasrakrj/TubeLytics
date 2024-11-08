@@ -5,27 +5,17 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 public class SearchHistory {
-    private CompletionStage<List<SearchResult>> SearchResults;
-    private LinkedHashMap<String, CompletionStage<List<Video>>>  SearchMap;
+    private LinkedHashMap<String, CompletionStage<List<Video>>> SearchHistoryMap;
 
-    public SearchHistory(CompletionStage<List<SearchResult>> searchResults, LinkedHashMap<String, CompletionStage<List<Video>>> searchMap) {
-        SearchResults = searchResults;
-        SearchMap = searchMap;
+    public SearchHistory(LinkedHashMap<String, CompletionStage<List<Video>>> searchHistoryMap) {
+        SearchHistoryMap = searchHistoryMap;
     }
 
-    public CompletionStage<List<SearchResult>> getSearchResults() {
-        return SearchResults;
+    public LinkedHashMap<String, CompletionStage<List<Video>>> getSearchHistoryMap() {
+        return SearchHistoryMap;
     }
 
-    public void setSearchResults(CompletionStage<List<SearchResult>> searchResults) {
-        SearchResults = searchResults;
-    }
-
-    public LinkedHashMap<String, CompletionStage<List<Video>>> getSearchMap() {
-        return SearchMap;
-    }
-
-    public void setSearchMap(LinkedHashMap<String, CompletionStage<List<Video>>> searchMap) {
-        SearchMap = searchMap;
+    public void setSearchHistoryMap(LinkedHashMap<String, CompletionStage<List<Video>>> searchHistoryMap) {
+        SearchHistoryMap = searchHistoryMap;
     }
 }
