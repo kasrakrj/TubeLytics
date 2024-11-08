@@ -37,8 +37,8 @@ public class YoutubeController extends Controller {
         this.wordStatService = wordStatService;
     }
 
-    public Result index() {
-        return ok(views.html.index.render());
+    public CompletionStage<Result> index() {
+        return CompletableFuture.completedFuture(ok(views.html.index.render()));
     }
 
     public CompletionStage<Result> search(String keyword) {
