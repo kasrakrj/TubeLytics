@@ -1,7 +1,6 @@
 package models.services;
 
 import models.entities.Video;
-import models.services.SessionManagerService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -20,16 +19,16 @@ public class SearchService {
     private final String API_KEY = youTubeService.getApiKey();
     private final String API_URL = youTubeService.getApiUrl();
     private final String YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
-    private static final int MAX_SEARCHES = 10;
 
     private final SessionManagerService sessionManagerService;
+    private final SentimentService sentimentService;
 
     @Inject
-    public SearchService(SessionManagerService sessionManagerService) {
+    public SearchService(SessionManagerService sessionManagerService, SentimentService sentimentService) {
         this.sessionManagerService = sessionManagerService;
+        this.sentimentService = sentimentService;
     }
 
-    // Method to call the YouTube API and process the response
     public CompletionStage<List<Video>> searchVideos(String keyword, int numOfResults) {
         String encodedKeyword = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
         String apiUrl = YOUTUBE_SEARCH_URL + numOfResults + "&q=" + encodedKeyword + "&key=" + API_KEY;
@@ -47,18 +46,28 @@ public class SearchService {
                 });
     }
 
-    // Method to add search results to the search history
-    public void addSearchResult(String sessionId, String keyword, List<Video> videos) {
+    public CompletionStage<Map<String, String>> calculateIndividualSentiments(String sessionId) {
+        Map<String, List<Video>> searchHistory = sessionManagerService.getSearchHistory(sessionId);
+
+        // Compute sentiment for each keyword in search history
+        List<CompletableFuture<Map.Entry<String, String>>> sentimentFutures = searchHistory.entrySet().stream()
+                .map(entry -> sentimentService.avgSentiment(entry.getValue())
+                        .thenApply(sentiment -> Map.entry(entry.getKey(), sentiment))
+                        .toCompletableFuture())
+                .collect(Collectors.toList());
+
+        return CompletableFuture.allOf(sentimentFutures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> sentimentFutures.stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+    }
+
+    public CompletionStage<String> calculateOverallSentiment(String sessionId, int numOfResults) {
+        List<Video> allVideos = sessionManagerService.getAllVideosForSentiment(sessionId, numOfResults);
+        return sentimentService.avgSentiment(allVideos);
+    }
+
+    public void addSearchResultToHistory(String sessionId, String keyword, List<Video> videos) {
         sessionManagerService.addSearchResult(sessionId, keyword, videos);
-    }
-
-    // Retrieve the search history
-    public Map<String, List<Video>> getSearchHistory(String sessionId) {
-        return sessionManagerService.getSearchHistory(sessionId);
-    }
-
-    // Get all videos from search history for sentiment analysis
-    public List<Video> getAllVideosForSentiment(String sessionId, int limit) {
-        return sessionManagerService.getAllVideosForSentiment(sessionId, limit);
     }
 }

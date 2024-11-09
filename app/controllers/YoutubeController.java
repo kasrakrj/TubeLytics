@@ -1,11 +1,16 @@
 package controllers;
 
-import models.entities.Video;
 import models.services.*;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+
 import models.services.SessionManagerService;
+import models.services.SearchService;
+import models.services.SentimentService;
+import models.services.WordStatService;
+import models.services.ChannelProfileService;
+import models.services.TagsService;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -74,64 +79,32 @@ public class YoutubeController extends Controller {
     public CompletionStage<Result> search(String keyword, Http.Request request) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return CompletableFuture.completedFuture(
-                    redirect(routes.YoutubeController.index())
-                            .withSession(request.session()) // Retain existing session
+                    redirect(routes.YoutubeController.index()).withSession(request.session())
             );
         }
 
         String standardizedKeyword = keyword.trim().toLowerCase();
         String sessionId = getSessionId(request);
 
-        // Create final variables to ensure they are effectively final
-        final String finalSessionId;
         final boolean isNewSession;
-
         if (sessionId == null) {
-            finalSessionId = UUID.randomUUID().toString();
+            sessionId = UUID.randomUUID().toString();
             isNewSession = true;
         } else {
-            finalSessionId = sessionId;
             isNewSession = false;
         }
 
+        final String finalSessionId = sessionId;
+
         return searchService.searchVideos(standardizedKeyword, DEFAULT_NUM_OF_RESULTS)
                 .thenCompose(videos -> {
-                    // Add the search result to the history
-                    searchService.addSearchResult(finalSessionId, standardizedKeyword, videos);
+                    searchService.addSearchResultToHistory(finalSessionId, standardizedKeyword, videos);
 
-                    // Compute individual sentiment for the current search
-                    CompletionStage<String> individualSentimentFuture = sentimentServiceAnalyzer.avgSentiment(videos);
+                    CompletionStage<String> overallSentimentFuture = searchService.calculateOverallSentiment(finalSessionId, NUM_OF_RESULTS_SENTIMENT);
+                    CompletionStage<Map<String, String>> individualSentimentsCombined = searchService.calculateIndividualSentiments(finalSessionId);
 
-                    // Compute overall sentiment from all videos in history
-                    List<Video> allVideos = searchService.getAllVideosForSentiment(finalSessionId, NUM_OF_RESULTS_SENTIMENT);
-                    CompletionStage<String> overallSentimentFuture = sentimentServiceAnalyzer.avgSentiment(allVideos);
-
-                    // Prepare individual sentiments for all keywords
-                    Map<String, List<Video>> searchHistory = searchService.getSearchHistory(finalSessionId);
-                    Map<String, CompletionStage<String>> individualSentimentsFutures = new LinkedHashMap<>();
-
-                    for (Map.Entry<String, List<Video>> entry : searchHistory.entrySet()) {
-                        String key = entry.getKey();
-                        List<Video> vidList = entry.getValue();
-                        individualSentimentsFutures.put(key, sentimentServiceAnalyzer.avgSentiment(vidList));
-                    }
-
-                    // Combine individual sentiments into a Map<String, String>
-                    CompletionStage<Map<String, String>> individualSentimentsCombined = CompletableFuture
-                            .allOf(individualSentimentsFutures.values().toArray(new CompletableFuture[0]))
-                            .thenApply(v -> {
-                                Map<String, String> sentiments = new LinkedHashMap<>();
-                                for (Map.Entry<String, CompletionStage<String>> entry : individualSentimentsFutures.entrySet()) {
-                                    String key = entry.getKey();
-                                    String sentiment = entry.getValue().toCompletableFuture().join();
-                                    sentiments.put(key, sentiment);
-                                }
-                                return sentiments;
-                            });
-
-                    // Combine all futures and render the result
                     return individualSentimentsCombined.thenCombine(overallSentimentFuture, (individualSentiments, overallSentiment) -> {
-                        Result result = ok(views.html.searchResults.render(searchHistory, overallSentiment, individualSentiments));
+                        Result result = ok(views.html.searchResults.render(sessionManagerService.getSearchHistory(finalSessionId), overallSentiment, individualSentiments));
                         if (isNewSession) {
                             result = result.addingToSession(request, "sessionId", finalSessionId);
                         }
@@ -142,6 +115,8 @@ public class YoutubeController extends Controller {
                     return internalServerError(views.html.errorPage.render("An error occurred while fetching search results."));
                 });
     }
+
+
 
     public CompletionStage<Result> channelProfile(String channelId, Http.Request request) {
         return channelProfileService.getChannelInfo(channelId)
@@ -164,7 +139,7 @@ public class YoutubeController extends Controller {
 
         return searchService.searchVideos(standardizedKeyword, NUM_OF_RESULTS_SENTIMENT)
                 .thenApply(videos -> {
-                    searchService.addSearchResult(sessionId, standardizedKeyword, videos);
+                    sessionManagerService.addSearchResult(sessionId, standardizedKeyword, videos);
                     Map<String, Long> wordStats = wordStatService.createWordStats(videos);
                     return ok(views.html.wordStats.render(standardizedKeyword, wordStats))
                             .addingToSession(request, "sessionId", sessionId);
