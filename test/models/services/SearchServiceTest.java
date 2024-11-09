@@ -23,7 +23,7 @@ public class SearchServiceTest {
 
     private SearchService searchService;
     private SentimentService mockSentimentService;
-    private ConcurrentMap<String, List<Video>> testCache;
+    private ConcurrentHashMap<String, List<Video>> testCache;
 
     /**
      * Sets up the necessary mocks and dependencies before each test.

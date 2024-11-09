@@ -41,7 +41,7 @@ public class SearchService {
      * @param sentimentService Service used for calculating sentiment of video descriptions.
      */
     @Inject
-    public SearchService(SentimentService sentimentService,ConcurrentMap<String, List<Video>> cache) {
+    public SearchService(SentimentService sentimentService,ConcurrentHashMap<String, List<Video>> cache) {
         this.sentimentService = sentimentService;
         this.cache = cache;
     }
