@@ -10,15 +10,26 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
+/**
+ * Unit tests for the YouTubeService class. This test suite verifies functionality
+ * related to parsing videos and tags from YouTube API JSON responses.
+ */
 public class YouTubeServiceTest {
 
     private YouTubeService youTubeService;
 
+    /**
+     * Initializes the YouTubeService instance before each test.
+     */
     @Before
     public void setUp() {
         youTubeService = new YouTubeService();
     }
 
+    /**
+     * Tests parseVideo when the 'id' field in JSON data is a simple string.
+     * Verifies that the video ID is correctly parsed and set in the Video object.
+     */
     @Test
     public void testParseVideoWithSimpleId() {
         // Prepare mock JSON data with 'id' as a simple string
@@ -41,6 +52,10 @@ public class YouTubeServiceTest {
         assertEquals("sampleVideoId", video.getVideoId());
     }
 
+    /**
+     * Tests parseVideo when the 'id' field in JSON data is an object containing 'videoId'.
+     * Verifies that the video ID is correctly extracted from the nested JSON object.
+     */
     @Test
     public void testParseVideoWithObjectId() {
         // Prepare mock JSON data with 'id' as an object containing 'videoId'
@@ -63,6 +78,10 @@ public class YouTubeServiceTest {
         assertEquals("sampleVideoId", video.getVideoId());
     }
 
+    /**
+     * Tests parseVideo with an empty JSON object, verifying that it returns null.
+     * This ensures parseVideo handles cases where no data is available correctly.
+     */
     @Test
     public void testParseVideoWithEmptyItem() {
         // Prepare an empty JSON object
@@ -75,18 +94,26 @@ public class YouTubeServiceTest {
         assertNull(video);
     }
 
-
+    /**
+     * Tests getApiKey to ensure it returns a non-null API key.
+     */
     @Test
     public void testGetApiKey() {
         assertNotNull(youTubeService.getApiKey());
     }
 
+    /**
+     * Tests getApiUrl to ensure it returns a non-null API URL.
+     */
     @Test
     public void testGetApiUrl() {
         assertNotNull(youTubeService.getApiUrl());
     }
 
-
+    /**
+     * Tests parseVideos with JSON data for multiple videos.
+     * Verifies that the returned list of Video objects matches the expected video details.
+     */
     @Test
     public void testParseVideos() {
         // Prepare mock JSON data for multiple videos
@@ -118,6 +145,10 @@ public class YouTubeServiceTest {
         assertEquals("videoId2", videos.get(1).getVideoId());
     }
 
+    /**
+     * Tests parseTags with JSON data containing tags.
+     * Verifies that the returned list of tags matches the expected tags in the data.
+     */
     @Test
     public void testParseTags() {
         // Prepare mock JSON data with tags
@@ -137,6 +168,10 @@ public class YouTubeServiceTest {
         assertTrue(tags.contains("tag3"));
     }
 
+    /**
+     * Tests parseTags with JSON data that does not contain any tags.
+     * Verifies that an empty list is returned when no tags are present in the data.
+     */
     @Test
     public void testParseTagsNoTags() {
         // Prepare mock JSON data without tags
@@ -152,3 +187,4 @@ public class YouTubeServiceTest {
         assertTrue(tags.isEmpty());
     }
 }
+
