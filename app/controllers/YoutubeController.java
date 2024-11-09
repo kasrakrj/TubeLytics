@@ -1,11 +1,9 @@
 package controllers;
 
-import models.services.*;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 
-import models.services.SessionManagerService;
 import models.services.SearchService;
 import models.services.SentimentService;
 import models.services.WordStatService;
@@ -27,21 +25,18 @@ public class YoutubeController extends Controller {
     private final WordStatService wordStatService;
     private final ChannelProfileService channelProfileService;
     private final TagsService tagsService;
-    private final SessionManagerService sessionManagerService;
 
     @Inject
     public YoutubeController(SearchService searchService,
                              SentimentService sentimentServiceAnalyzer,
                              WordStatService wordStatService,
                              ChannelProfileService channelProfileService,
-                             TagsService tagsService,
-                             SessionManagerService sessionManagerService) {
+                             TagsService tagsService) {
         this.searchService = searchService;
         this.sentimentServiceAnalyzer = sentimentServiceAnalyzer;
         this.wordStatService = wordStatService;
         this.channelProfileService = channelProfileService;
         this.tagsService = tagsService;
-        this.sessionManagerService = sessionManagerService;
     }
 
     /**
@@ -104,7 +99,7 @@ public class YoutubeController extends Controller {
                     CompletionStage<Map<String, String>> individualSentimentsCombined = searchService.calculateIndividualSentiments(finalSessionId);
 
                     return individualSentimentsCombined.thenCombine(overallSentimentFuture, (individualSentiments, overallSentiment) -> {
-                        Result result = ok(views.html.searchResults.render(sessionManagerService.getSearchHistory(finalSessionId), overallSentiment, individualSentiments));
+                        Result result = ok(views.html.searchResults.render(searchService.getSearchHistory(finalSessionId), overallSentiment, individualSentiments));
                         if (isNewSession) {
                             result = result.addingToSession(request, "sessionId", finalSessionId);
                         }
@@ -139,7 +134,7 @@ public class YoutubeController extends Controller {
 
         return searchService.searchVideos(standardizedKeyword, NUM_OF_RESULTS_SENTIMENT)
                 .thenApply(videos -> {
-                    sessionManagerService.addSearchResult(sessionId, standardizedKeyword, videos);
+                    searchService.addSearchResult(sessionId, standardizedKeyword, videos);
                     Map<String, Long> wordStats = wordStatService.createWordStats(videos);
                     return ok(views.html.wordStats.render(standardizedKeyword, wordStats))
                             .addingToSession(request, "sessionId", sessionId);

@@ -5,15 +5,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
 
 public class TagsService {
    YouTubeService youTubeService = new YouTubeService();

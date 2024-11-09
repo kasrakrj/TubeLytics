@@ -21,16 +21,16 @@ public class SearchService {
     private final String API_KEY = youTubeService.getApiKey();
     private final String API_URL = youTubeService.getApiUrl();
     private final String YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
+    private static final int MAX_SEARCH_HISTORY = 10;
+    private final Map<String, LinkedHashMap<String, List<Video>>> sessionSearchHistoryMap = new ConcurrentHashMap<>();
 
-    private final SessionManagerService sessionManagerService;
     private final SentimentService sentimentService;
 
     // In-memory cache for storing search results
     private final ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
 
     @Inject
-    public SearchService(SessionManagerService sessionManagerService, SentimentService sentimentService) {
-        this.sessionManagerService = sessionManagerService;
+    public SearchService( SentimentService sentimentService) {
         this.sentimentService = sentimentService;
     }
 
@@ -64,9 +64,17 @@ public class SearchService {
                     return videos;
                 });
     }
-
+    public Map<String, List<Video>> getSearchHistory(String sessionId) {
+        LinkedHashMap<String, List<Video>> searchHistory = sessionSearchHistoryMap.get(sessionId);
+        if (searchHistory == null) {
+            return Collections.emptyMap();
+        }
+        synchronized (searchHistory) {
+            return new LinkedHashMap<>(searchHistory);
+        }
+    }
     public CompletionStage<Map<String, String>> calculateIndividualSentiments(String sessionId) {
-        Map<String, List<Video>> searchHistory = sessionManagerService.getSearchHistory(sessionId);
+        Map<String, List<Video>> searchHistory = getSearchHistory(sessionId);
 
         // Compute sentiment for each keyword in search history
         List<CompletableFuture<Map.Entry<String, String>>> sentimentFutures = searchHistory.entrySet().stream()
@@ -82,11 +90,44 @@ public class SearchService {
     }
 
     public CompletionStage<String> calculateOverallSentiment(String sessionId, int numOfResults) {
-        List<Video> allVideos = sessionManagerService.getAllVideosForSentiment(sessionId, numOfResults);
+        List<Video> allVideos = getAllVideosForSentiment(sessionId, numOfResults);
         return sentimentService.avgSentiment(allVideos);
     }
 
     public void addSearchResultToHistory(String sessionId, String keyword, List<Video> videos) {
-        sessionManagerService.addSearchResult(sessionId, keyword, videos);
+        addSearchResult(sessionId, keyword, videos);
+    }
+    public void addSearchResult(String sessionId, String keyword, List<Video> videos) {
+        LinkedHashMap<String, List<Video>> searchHistory = sessionSearchHistoryMap.computeIfAbsent(sessionId, k -> new LinkedHashMap<>());
+
+        synchronized (searchHistory) {
+            if (searchHistory.size() >= MAX_SEARCH_HISTORY) {
+                Iterator<String> iterator = searchHistory.keySet().iterator();
+                if (iterator.hasNext()) {
+                    iterator.next();
+                    iterator.remove();
+                }
+            }
+            searchHistory.put(keyword, videos);
+        }
+    }
+    public List<Video> getAllVideosForSentiment(String sessionId, int limit) {
+        LinkedHashMap<String, List<Video>> searchHistory = sessionSearchHistoryMap.get(sessionId);
+        if (searchHistory == null) {
+            return Collections.emptyList();
+        }
+
+        synchronized (searchHistory) {
+            return searchHistory.values().stream()
+                    .flatMap(List::stream)
+                    .limit(limit)
+                    .collect(Collectors.toList());
+        }
+    }
+
+
+
+    public void clearSearchHistory(String sessionId) {
+        sessionSearchHistoryMap.remove(sessionId);
     }
 }
