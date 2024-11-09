@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class SearchService {
@@ -23,6 +25,9 @@ public class SearchService {
     private final SessionManagerService sessionManagerService;
     private final SentimentService sentimentService;
 
+    // In-memory cache for storing search results
+    private final ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
+
     @Inject
     public SearchService(SessionManagerService sessionManagerService, SentimentService sentimentService) {
         this.sessionManagerService = sessionManagerService;
@@ -30,6 +35,15 @@ public class SearchService {
     }
 
     public CompletionStage<List<Video>> searchVideos(String keyword, int numOfResults) {
+        String cacheKey = keyword + ":" + numOfResults;
+
+        // Check cache first
+        List<Video> cachedResult = cache.get(cacheKey);
+        if (cachedResult != null) {
+            return CompletableFuture.completedFuture(cachedResult);
+        }
+
+        // If not cached, fetch from YouTube API
         String encodedKeyword = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
         String apiUrl = YOUTUBE_SEARCH_URL + numOfResults + "&q=" + encodedKeyword + "&key=" + API_KEY;
 
@@ -42,7 +56,12 @@ public class SearchService {
                     JSONObject json = new JSONObject(responseBody);
                     JSONArray items = json.getJSONArray("items");
 
-                    return youTubeService.parseVideos(items);
+                    List<Video> videos = youTubeService.parseVideos(items);
+
+                    // Cache the result
+                    cache.put(cacheKey, videos);
+
+                    return videos;
                 });
     }
 
