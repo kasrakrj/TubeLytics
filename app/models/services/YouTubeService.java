@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
+ * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  * The YouTubeService class provides utility methods to interact with the YouTube Data API,
  * parse video details, and extract metadata such as tags. It relies on configuration values
  * for API key and URL, which are loaded from an external configuration file.
@@ -23,12 +24,14 @@ public class YouTubeService {
     private static final String BASE_VIDEO_URL = "https://www.youtube.com/watch?v=";
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Constructs a YouTubeService instance and loads the necessary API configuration.
      */
     public YouTubeService() {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Retrieves the YouTube API key from the configuration.
      *
      * @return The API key as a String.
@@ -47,6 +50,7 @@ public class YouTubeService {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Parses a JSONObject to create a Video object, extracting details such as title, description,
      * channel information, thumbnail URL, and video URL.
      *
@@ -86,6 +90,7 @@ public class YouTubeService {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Parses a JSONArray containing video items and converts each item into a Video object.
      *
      * @param items A JSONArray of video items from the YouTube API response.
@@ -104,6 +109,7 @@ public class YouTubeService {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Parses a JSONArray to extract tags from the first item in the array using Java Streams.
      *
      * @param items A JSONArray of video items, with each item potentially containing tags.

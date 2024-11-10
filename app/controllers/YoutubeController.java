@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
+ * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  * The YoutubeController class provides the main entry points for handling user interactions
  * with the YouTube API, including searching for videos, viewing tags, generating word statistics,
  * and retrieving channel profiles. It manages session data and handles asynchronous requests.
@@ -33,6 +34,7 @@ public class YoutubeController extends Controller {
     private final TagsService tagsService;
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Constructs a YoutubeController with injected dependencies.
      *
      * @param searchService          The service for searching YouTube videos.
@@ -52,6 +54,7 @@ public class YoutubeController extends Controller {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Helper method to retrieve the session ID from the request. If not present, generates a new one.
      *
      * @param request The HTTP request from the client.
@@ -62,6 +65,7 @@ public class YoutubeController extends Controller {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Renders the index page, initializing a session ID if it doesn't exist.
      *
      * @param request The HTTP request from the client.
@@ -80,6 +84,7 @@ public class YoutubeController extends Controller {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Renders the tags page for a specific video by ID.
      *
      * @param videoID The ID of the video for which to retrieve tags.
@@ -99,6 +104,7 @@ public class YoutubeController extends Controller {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Performs a video search based on a keyword, storing search history and calculating sentiment.
      *
      * @param keyword The keyword to search for.
@@ -146,6 +152,7 @@ public class YoutubeController extends Controller {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Renders the channel profile page for a given channel ID, including channel information and videos.
      *
      * @param channelId The ID of the YouTube channel.
@@ -164,6 +171,7 @@ public class YoutubeController extends Controller {
     }
 
     /**
+     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Generates word statistics for a given search keyword and displays them on the word statistics page.
      *
      * @param keyword The keyword for which to generate word statistics.
