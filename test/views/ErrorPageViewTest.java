@@ -6,18 +6,15 @@ import org.junit.Test;
 import play.twirl.api.Html;
 import views.html.errorPage;
 
-public class ErrorPageTest {
+public class ErrorPageViewTest {
     @Test
-    public void testError() {
-        // Sample error message
+    public void errorTest() {
+        // Error message sample
         String errorMessage = "An unexpected error occurred.";
-
-        // Render the template
+        // Render
         Html html = errorPage.render(errorMessage);
-
-        //  Check if the rendered HTML is not null
+        //  Check for the HTML not be null
         assertNotNull(html);
-
         // Check if the HTML contains the expected header and message
         assertTrue(html.body().contains("<h1>Error</h1>"));
         assertTrue(html.body().contains("<p>An unexpected error occurred.</p>"));

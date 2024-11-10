@@ -1,3 +1,16 @@
+@*
+* Displaying the profile information for a YouTube channel.
+*
+* Inputs:
+* - Channel metadata: name, subscriber count, and total views.
+* - List of recent videos or additional channel-specific information.
+*
+* Expected Outcome:
+* - Presents channel details in an organized layout, including key statistics and recent content.
+* - Allows users to view an overview of the channel's activity and popularity.
+*@
+
+
 @import org.json.JSONObject
 @(channelInfo: JSONObject, videos: List[entities.Video])
 

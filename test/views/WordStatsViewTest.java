@@ -8,32 +8,30 @@ import play.test.WithApplication;
 import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
-public class WordStatsTest extends WithApplication{
+public class WordStatsViewTest extends WithApplication{
     private String keyword;
     private Map<String, Long> wordCounts;
 
     @Before
-    public void setUp() {
-        // Initialize test data
+    public void mockSetup() {
         keyword = "Sample Keyword";
         wordCounts = Map.of("sample", 10L, "keyword", 5L, "test", 2L);
     }
 
     @Test
-    public void testTemplateRendersTitleAndKeyword() {
+    public void testTitleAndKeyword() {
         Html content = views.html.wordStats.render(keyword, wordCounts);
         String htmlContent = Helpers.contentAsString(content);
 
-        // Check for main title and keyword display
+        // Check main title and keyword display
         assertTrue(htmlContent.contains("Word stats for \"Sample Keyword\""));
     }
 
     @Test
-    public void testTemplateRendersWordCounts() {
+    public void testWordCounts() {
         Html content = views.html.wordStats.render(keyword, wordCounts);
         String htmlContent = Helpers.contentAsString(content);
-
-        // Check that each word and its count appear in the rendered HTML
+        // Check if each word and its count appear
         assertTrue(htmlContent.contains("<strong>sample</strong>"));
         assertTrue(htmlContent.contains("<span>10</span>"));
         assertTrue(htmlContent.contains("<strong>keyword</strong>"));

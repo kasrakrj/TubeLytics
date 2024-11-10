@@ -15,21 +15,21 @@ import java.util.Map;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class SearchResultTest extends WithApplication {
+public class SearchResultViewTest extends WithApplication {
     private Video video;
     private Map<String, List<Video>> searchHistory;
     private String overallSentiment;
     private Map<String, String> individualSentiments;
 
     @Before
-    public void setUp() {
+    public void mockSetup() {
         // Mock Video object
         video = Mockito.mock(Video.class);
-        when(video.getTitle()).thenReturn("Sample Video Title");
-        when(video.getDescription()).thenReturn("A sample video description.");
+        when(video.getTitle()).thenReturn("Best Music Video.");
+        when(video.getDescription()).thenReturn("The best music video of 2024.");
         when(video.getThumbnailUrl()).thenReturn("http://example.com/sample-thumbnail.jpg");
-        when(video.getVideoId()).thenReturn("sample123");
-        when(video.getChannelId()).thenReturn("channel123");
+        when(video.getVideoId()).thenReturn("VideoId1");
+        when(video.getChannelId()).thenReturn("ChannelId1");
         when(video.getChannelTitle()).thenReturn("Sample Channel");
 
         // Set up search history and sentiments
@@ -41,29 +41,30 @@ public class SearchResultTest extends WithApplication {
     }
 
     @Test
-    public void testTemplateRendersSearchResults() {
+    public void testingRenderingSearchResults() {
         Html content = views.html.searchResults.render(searchHistory, overallSentiment, individualSentiments);
         String htmlContent = Helpers.contentAsString(content);
 
-        // Check for overall title and form
+        // Overall title and form
         assertTrue(htmlContent.contains("YT Lytics - SearchResult Results"));
         assertTrue(htmlContent.contains("Enter search keywords"));
 
-        // Check for keyword and sentiment
+        // Keyword and sentiment
         assertTrue(htmlContent.contains("SearchResult Results for 'testKeyword'"));
         assertTrue(htmlContent.contains("Sentiment for 'testKeyword': positive"));
 
-        // Verify video details
-        assertTrue(htmlContent.contains("Sample Video Title"));
-        assertTrue(htmlContent.contains("A sample video description."));
+        // Verify details
+        assertTrue(htmlContent.contains("Best Music Video."));
+        assertTrue(htmlContent.contains("The best music video of 2024."));
         assertTrue(htmlContent.contains("Sample Channel"));
-        assertTrue(htmlContent.contains("href=\"https://www.youtube.com/watch?v=sample123\""));
+        assertTrue(htmlContent.contains("href=\"https://www.youtube.com/watch?v=VideoId1\""));
 
-        // Verify mock interactions
+        // Verify interactions
         verify(video, atLeastOnce()).getTitle();
         verify(video, atLeastOnce()).getThumbnailUrl();
         verify(video, atLeastOnce()).getVideoId();
         verify(video, atLeastOnce()).getChannelId();
         verify(video, atLeastOnce()).getChannelTitle();
     }
+
 }

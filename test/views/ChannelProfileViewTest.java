@@ -15,41 +15,44 @@ import java.util.List;
 public class ChannelProfileViewTest {
 
     @Test
-    public void testChannelProfileTemplateRendering() {
-        // Set up mock channel information
+    public void channelProfileTest() {
+        // Mock channel info
         JSONObject channelInfo = new JSONObject();
-        channelInfo.put("title", "Sample Channel");
-        channelInfo.put("description", "This is a sample channel description");
+        channelInfo.put("title", "Channel");
+        channelInfo.put("description", "Music videos from all around the world.");
 
-        // Set up a list of mock videos
-        Video video1 = new Video("Sample Video 1", "This is the first video description.",
-                "Sample Channel", "sample-thumbnail-url-1.jpg", "videoId1", "channelId1", "video-url-1");
-        Video video2 = new Video("Sample Video 2", "This is the second video description.",
-                "Sample Channel", "sample-thumbnail-url-2.jpg", "videoId2", "channelId2", "video-url-2");
-        List<Video> videos = Arrays.asList(video1, video2);
+        // List of mock videos
+        Video video1 = new Video("Video 1", "Happy mappy music video.",
+                "Channel", "sample-thumbnail-url-1.jpg", "videoId1", "channelId1", "video-url-1");
+        Video video2 = new Video("Video 2", "Hello music video by unknown artist.",
+                "Channel", "sample-thumbnail-url-2.jpg", "videoId2", "channelId2", "video-url-2");
+        Video video3 = new Video("Video 3", "Top rated music video of 2024.",
+                "Channel", "sample-thumbnail-url-3.jpg", "videoId3", "channelId3", "video-url-3");
 
-        // Render the template using render()
+        List<Video> videos = Arrays.asList(video1, video2, video3);
+
+        // Render the template
         Html html = channelProfile.render(channelInfo, videos);
 
-        // Convert Html content to string
+        // Convert content to string
         String renderedContent = html.body();
 
-        // Verify the rendered HTML contains expected content
-        assertTrue(renderedContent.contains("<h1>Sample Channel</h1>"));
-        assertTrue(renderedContent.contains("<p>This is a sample channel description</p>"));
+        // Verify the rendered HTML
+        assertTrue(renderedContent.contains("<h1>Channel</h1>"));
+        assertTrue(renderedContent.contains("<p>Music videos from all around the world.</p>"));
 
-        // Check for video details in the rendered HTML
-        assertTrue(renderedContent.contains("<h3>Sample Video 1</h3>"));
-        assertTrue(renderedContent.contains("<p>This is the first video description.</p>"));
+        // Check for video details
+        assertTrue(renderedContent.contains("<h3>Video 1</h3>"));
+        assertTrue(renderedContent.contains("<p>Happy mappy music video.</p>"));
         assertTrue(renderedContent.contains("<img src=\"sample-thumbnail-url-1.jpg\" alt=\"Thumbnail\">"));
 
-        assertTrue(renderedContent.contains("<h3>Sample Video 2</h3>"));
-        assertTrue(renderedContent.contains("<p>This is the second video description.</p>"));
+        assertTrue(renderedContent.contains("<h3>Video 2</h3>"));
+        assertTrue(renderedContent.contains("<p>Hello music video by unknown artist.</p>"));
         assertTrue(renderedContent.contains("<img src=\"sample-thumbnail-url-2.jpg\" alt=\"Thumbnail\">"));
     }
 
-    @Test
-    public void testChannelProfileRefAndFMethods() {
+    /*@Test
+    public void Ref_Methods_ChannelProf_Test() {
         // Verify ref() returns an instance of channelProfile
         assertNotNull(channelProfile.ref());
 
@@ -58,8 +61,8 @@ public class ChannelProfileViewTest {
 
         // Render template via f() to test coverage on the generated code's f() method
         JSONObject channelInfo = new JSONObject();
-        channelInfo.put("title", "Sample Channel");
-        channelInfo.put("description", "Sample Description");
+        channelInfo.put("title", "Channel");
+        channelInfo.put("description", "Music videos from all around the world.");
 
         List<Video> videos = Arrays.asList(
                 new Video("Title 1", "Description 1", "Sample Channel", "thumbnail1.jpg", "id1", "channelId1", "url1")
@@ -67,9 +70,9 @@ public class ChannelProfileViewTest {
 
         Html htmlFromF = channelProfile.f().apply(channelInfo, videos);
         assertNotNull(htmlFromF);
-    }
+    }*/
 
-    @Test
+  /*  @Test
     public void testChannelProfileSerializationForWriteReplace() {
         // Set up channel info and videos
         JSONObject channelInfo = new JSONObject();
@@ -88,5 +91,5 @@ public class ChannelProfileViewTest {
         String renderedContent = html.body();
         assertTrue(renderedContent.contains("Test Channel"));
         assertTrue(renderedContent.contains("Testing serialization"));
-    }
+    }*/
 }

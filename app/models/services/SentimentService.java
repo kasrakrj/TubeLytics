@@ -1,13 +1,20 @@
 package models.services;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import models.entities.Video;
+
 /**
- * This is a class to analyze sentiment from YouTube video descriptions
- * Sentiment would be calculated for each video and the average sentiment of video streams
- * would be shown as the overall sentiment of each search query
+ * This is a service class to analyze sentiment from YouTube video descriptions.
+ * Sentiment is calculated for each video description and an average sentiment
+ * is provided for a list of video descriptions.
+ *
+ * <p>The sentiment for each description is classified as positive, negative, or neutral
+ * based on the occurrence of specific words. The average sentiment is calculated
+ * asynchronously, using non-blocking operations.
  *
  * @author Hosna Habibi
  */
@@ -35,6 +42,7 @@ public class SentimentService {
             "pumped up", "smiles all around", "warm fuzzies", "cheers to that",
             "rejoicing", "truly blessed", "couldn't be happier", "heart full of joy"
     );
+
     /**
      * List of keywords indicating negative sentiment.
      */
@@ -84,10 +92,10 @@ public class SentimentService {
     /**
      * Calculate the average sentiment for a list of video descriptions asynchronously.
      *
-     * @param videos the list of videos we want to analyze their overall sentiment
-     * @return a CompletableFuture<String> representing the overall sentiment asynchronously
+     * @param videos the list of videos for which we want to analyze overall sentiment
+     * @return a CompletionStage<String> representing the overall sentiment asynchronously
      */
-    public CompletableFuture<String> avgSentiment(List<Video> videos) {
+    public CompletionStage<String> avgSentiment(List<Video> videos) {
         if (videos == null || videos.isEmpty()) {
             return CompletableFuture.completedFuture(":-|"); // Neutral if no videos are present
         }
@@ -103,19 +111,16 @@ public class SentimentService {
                 }))
                 .collect(Collectors.toList());
 
-        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
-                sentimentFutures.toArray(new CompletableFuture[0])
-        );
+        return CompletableFuture.allOf(sentimentFutures.toArray(new CompletableFuture[0]))
+                .thenCompose(v -> CompletableFuture.supplyAsync(() -> {
+                    double averageScore = sentimentFutures.stream()
+                            .mapToInt(f -> f.join()) // Safe within this async context to combine results
+                            .average()
+                            .orElse(0);
 
-        return allFutures.thenApply(v -> {
-            double averageScore = sentimentFutures.stream()
-                    .mapToInt(CompletableFuture::join)
-                    .average()
-                    .orElse(0);
-
-            if (averageScore > 0) return ":-)"; // Overall Happy
-            else if (averageScore < 0) return ":-("; // Overall Sad
-            else return ":-|"; // Overall Neutral
-        });
+                    if (averageScore > 0) return ":-)"; // Overall Happy
+                    else if (averageScore < 0) return ":-("; // Overall Sad
+                    else return ":-|"; // Overall Neutral
+                }));
     }
 }

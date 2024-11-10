@@ -5,16 +5,16 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import play.twirl.api.Html;
 import views.html.index; // Adjust if the template name is different
-public class IndexTest {
+public class IndexViewTest {
     @Test
-    public void testYTLytics() {
-        // Render the template
+    public void indexTest() {
+        // Render
         Html html = index.render();
 
-        // Check if the rendered HTML is not null
+        // Check for the HTML not be null
         assertNotNull(html);
 
-        // Check that the HTML contains the main elements
+        // Check for the HTML to contain the main elements
         assertTrue(html.body().contains("class=\"circle-container\""));
         assertTrue(html.body().contains("class=\"welcome-message\""));
         assertTrue(html.body().contains("Welcome to YT Lytics!"));

@@ -69,7 +69,7 @@ public class SentimentServiceTest {
         doReturn(":-(").when(sentimentAnalyzer).calculateSentiment("The movie makes me both sad and disappointed.");
         doReturn(":-|").when(sentimentAnalyzer).calculateSentiment("Just an ordinary, regular book.");
 
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
+        CompletableFuture<String> sentimentFuture = (CompletableFuture<String>) sentimentAnalyzer.avgSentiment(videos);
         assertEquals(":-|", sentimentFuture.join());
 
         verify(sentimentAnalyzer, times(1)).calculateSentiment("I am so happy and amazed!");
@@ -82,14 +82,14 @@ public class SentimentServiceTest {
     public void testAnalyzeSentimentEmptyList() {
         List<Video> videos = List.of();
 
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
+        CompletableFuture<String> sentimentFuture = (CompletableFuture<String>) sentimentAnalyzer.avgSentiment(videos);
         assertEquals(":-|", sentimentFuture.join());
     }
 
     // Test for avgSentiment with a null video list
     @Test
     public void testAnalyzeSentimentNullList() {
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(null);
+        CompletableFuture<String> sentimentFuture = (CompletableFuture<String>) sentimentAnalyzer.avgSentiment(null);
         assertEquals(":-|", sentimentFuture.join());
     }
 
@@ -106,7 +106,7 @@ public class SentimentServiceTest {
         doReturn(":-)").when(sentimentAnalyzer).calculateSentiment("I am thrilled todaaay.");
         doReturn(":-|").when(sentimentAnalyzer).calculateSentiment("It was just a regular book.");
 
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
+        CompletableFuture<String> sentimentFuture = (CompletableFuture<String>) sentimentAnalyzer.avgSentiment(videos);
         assertEquals(":-)", sentimentFuture.join());
     }
 
@@ -123,7 +123,7 @@ public class SentimentServiceTest {
         doReturn(":-(").when(sentimentAnalyzer).calculateSentiment("Feeling down and angry.");
         doReturn(":-|").when(sentimentAnalyzer).calculateSentiment("It's an average amount of profession.");
 
-        CompletableFuture<String> sentimentFuture = sentimentAnalyzer.avgSentiment(videos);
+        CompletableFuture<String> sentimentFuture = (CompletableFuture<String>) sentimentAnalyzer.avgSentiment(videos);
         assertEquals(":-(", sentimentFuture.join());
     }
 }
