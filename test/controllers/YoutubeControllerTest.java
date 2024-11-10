@@ -107,7 +107,7 @@ public class YoutubeControllerTest {
         CompletionStage<Result> resultStage = youtubeController.search("", request);
         Result result = resultStage.toCompletableFuture().join();
 
-        assertEquals(SEE_OTHER, result.status()); // Adjusted to match actual response code
+        assertEquals(SEE_OTHER, result.status()); // 303 See Other
         assertEquals(routes.YoutubeController.index().url(), result.redirectLocation().orElse(""));
     }
 
@@ -119,7 +119,7 @@ public class YoutubeControllerTest {
         CompletionStage<Result> resultStage = youtubeController.search(null, request);
         Result result = resultStage.toCompletableFuture().join();
 
-        assertEquals(SEE_OTHER, result.status()); // Adjusted to match actual response code
+        assertEquals(SEE_OTHER, result.status()); // 303 See Other
         assertEquals(routes.YoutubeController.index().url(), result.redirectLocation().orElse(""));
     }
 
@@ -163,5 +163,45 @@ public class YoutubeControllerTest {
         Result result = resultStage.toCompletableFuture().join();
 
         assertEquals(OK, result.status());
+    }
+
+    /**
+     * Tests the wordStats method when the keyword is null.
+     * Expects a redirect to the index page.
+     */
+    @Test
+    public void testWordStatsWithNullKeyword() {
+        Http.Request request = mock(Http.Request.class);
+        when(request.session()).thenReturn(new Http.Session(Map.of("sessionId", "existingSessionId")));
+
+        CompletionStage<Result> resultStage = youtubeController.wordStats(null, request);
+        Result result = resultStage.toCompletableFuture().join();
+
+        assertEquals(SEE_OTHER, result.status()); // 303 See Other
+        assertEquals(routes.YoutubeController.index().url(), result.redirectLocation().orElse(""));
+    }
+
+    /**
+     * Tests the wordStats method when the keyword is an empty string or contains only whitespace.
+     * Expects a redirect to the index page.
+     */
+    @Test
+    public void testWordStatsWithEmptyKeyword() {
+        Http.Request request = mock(Http.Request.class);
+        when(request.session()).thenReturn(new Http.Session(Map.of("sessionId", "existingSessionId")));
+
+        // Test with empty string
+        CompletionStage<Result> resultStageEmpty = youtubeController.wordStats("", request);
+        Result resultEmpty = resultStageEmpty.toCompletableFuture().join();
+
+        assertEquals(SEE_OTHER, resultEmpty.status()); // 303 See Other
+        assertEquals(routes.YoutubeController.index().url(), resultEmpty.redirectLocation().orElse(""));
+
+        // Test with whitespace-only string
+        CompletionStage<Result> resultStageWhitespace = youtubeController.wordStats("   ", request);
+        Result resultWhitespace = resultStageWhitespace.toCompletableFuture().join();
+
+        assertEquals(SEE_OTHER, resultWhitespace.status()); // 303 See Other
+        assertEquals(routes.YoutubeController.index().url(), resultWhitespace.redirectLocation().orElse(""));
     }
 }

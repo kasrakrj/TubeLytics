@@ -335,4 +335,63 @@ public class SearchServiceTest {
         // Validate that the history is cleared
         assertTrue("History should be empty after clearing", searchService.getSearchHistory(sessionId).isEmpty());
     }
+
+    /**
+     * **New Test Method**
+     *
+     * Verifies that getAllVideosForSentiment returns an empty list when the session has no search history.
+     * This ensures that the `if (searchHistory == null)` condition is properly handled.
+     */
+    @Test
+    public void testGetAllVideosForSentiment_NoHistory() {
+        String nonExistentSessionId = "nonExistentSession";
+        int limit = 5;
+
+        // Ensure no search history exists for the given sessionId
+        assertTrue("Search history should be empty before test",
+                searchService.getSearchHistory(nonExistentSessionId).isEmpty());
+
+        // Invoke getAllVideosForSentiment
+        List<Video> result = searchService.getAllVideosForSentiment(nonExistentSessionId, limit);
+
+        // Assert that the returned list is empty
+        assertNotNull("Result should not be null", result);
+        assertTrue("Result should be empty for non-existent sessionId", result.isEmpty());
+    }
+
+    /**
+     * **Optional Additional Test Method**
+     *
+     * Verifies that getAllVideosForSentiment correctly retrieves videos up to the specified limit when the session has search history.
+     * This indirectly covers the non-null path of the `if` statement.
+     */
+    @Test
+    public void testGetAllVideosForSentiment_WithHistory() {
+        String sessionId = "sessionWithHistory";
+        int limit = 5;
+
+        // Add multiple search results to the session's history
+        for (int i = 1; i <= 10; i++) {
+            String keyword = "keyword" + i;
+            List<Video> videos = List.of(
+                    new Video("Video " + i, "Description " + i, "Channel " + i,
+                            "https://thumbnail" + i + ".url", "videoId" + i,
+                            "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i)
+            );
+            searchService.addSearchResultToHistory(sessionId, keyword, videos);
+        }
+
+        // Invoke getAllVideosForSentiment
+        List<Video> result = searchService.getAllVideosForSentiment(sessionId, limit);
+
+        // Assert that the returned list contains the correct number of videos
+        assertNotNull("Result should not be null", result);
+        assertEquals("Result size should match the limit", limit, result.size());
+
+        // Optionally, verify the content of the videos
+        for (int i = 0; i < limit; i++) {
+            Video video = result.get(i);
+            assertEquals("Video title should match", "Video " + (i + 1), video.getTitle());
+        }
+    }
 }
