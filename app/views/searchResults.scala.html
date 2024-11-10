@@ -1,3 +1,16 @@
+@*
+* This template displays the results of a search query for YouTube video descriptions.
+*
+* Inputs:
+* - List of video descriptions matching the search query.
+* - Sentiment analysis results or summary statistics for each description.
+*
+* Expected Outcome:
+* - Renders a list of search results with individual video descriptions and sentiment scores.
+* - Allows users to see an overview of relevant videos and their sentiment alignment.
+*@
+
+
 @(searchHistory: Map[String, List[entities.Video]], overallSentiment: String, individualSentiments: Map[String, String])
 
 @main("YT Lytics") {

@@ -17,6 +17,11 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for the TagsService class. This test suite verifies the functionality
+ * of retrieving tags for a video and fetching video details by video ID from YouTube.
+ * Mocks are used for dependencies such as YouTubeService and HttpClient.
+ */
 public class TagsServiceTest {
 
     private TagsService mockTagsService;
@@ -24,6 +29,10 @@ public class TagsServiceTest {
     private HttpClient mockHttpClient;
     private HttpResponse<String> mockResponse;
 
+    /**
+     * Sets up the necessary mocks and initializes the TagsService instance
+     * before each test.
+     */
     @Before
     public void setUp() {
         mockTagsService = Mockito.mock(TagsService.class);
@@ -32,8 +41,16 @@ public class TagsServiceTest {
         mockResponse = Mockito.mock(HttpResponse.class);
     }
 
-
-
+    /**
+     * Tests the getTagsByVideo method in TagsService, ensuring that it retrieves the
+     * correct tags for a given video.
+     * <p>
+     * This method mocks the YouTube API response with JSON data containing video tags
+     * and verifies that the retrieved tags match the expected list.
+     * </p>
+     *
+     * @throws Exception if any asynchronous operation fails
+     */
     @Test
     public void testGetTagsByVideo() throws Exception {
         // Set up mock YouTubeService and HttpResponse
@@ -72,6 +89,16 @@ public class TagsServiceTest {
         assertTrue(tags.contains("tag2"));
     }
 
+    /**
+     * Tests the getVideoByVideoId method in TagsService, verifying that it retrieves the
+     * correct video details when given a video ID.
+     * <p>
+     * This method mocks the YouTube API JSON response containing video details and validates
+     * that the retrieved Video object matches the expected data.
+     * </p>
+     *
+     * @throws Exception if any asynchronous operation fails
+     */
     @Test
     public void testGetVideoByVideoId() throws Exception {
         // Set up mock YouTubeService and HttpResponse
@@ -116,5 +143,4 @@ public class TagsServiceTest {
         assertEquals("sampleChannelId", video.getChannelId());
         assertEquals("https://www.youtube.com/watch?v=sampleVideoId", video.getVideoURL());
     }
-
 }
