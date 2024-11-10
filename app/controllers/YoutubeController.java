@@ -113,4 +113,15 @@ public class YoutubeController extends Controller {
             });
     }
 
+    public LinkedHashMap<String, List<Video>> getSearchHistory() {
+        return searchHistory;
+    }
+
+    public Map<String, String> getIndividualSentiments() {
+        return individualSentiments;
+    }
+
+    public static int getMaxSearches() {
+        return MAX_SEARCHES;
+    }
 }
