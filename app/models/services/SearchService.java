@@ -29,12 +29,32 @@ public class SearchService {
     private static final int MAX_SEARCH_HISTORY = 10;
     private final Map<String, LinkedHashMap<String, List<Video>>> sessionSearchHistoryMap = new ConcurrentHashMap<>();
 
+    public String getAPI_KEY() {
+        return API_KEY;
+    }
+
+    public String getAPI_URL() {
+        return API_URL;
+    }
+
+    public String getYOUTUBE_SEARCH_URL() {
+        return YOUTUBE_SEARCH_URL;
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
+    }
+
     private final SentimentService sentimentService;
 
     // In-memory cache for storing search results
     private ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
 
-    private  HttpClient httpClient=HttpClient.newHttpClient();;
+    public ConcurrentMap<String, List<Video>> getCache() {
+        return cache;
+    }
+
+    private  HttpClient httpClient ;
 
     /**
      * Constructs a SearchService instance with the provided SentimentService, YouTubeService, cache, and HttpClient.
@@ -52,6 +72,18 @@ public class SearchService {
         this.API_URL = youTubeService.getApiUrl();
         this.YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
         this.cache = cache;
+        this.httpClient=HttpClient.newHttpClient();
+    }
+
+
+    public SearchService(SentimentService sentimentService, YouTubeService youTubeService, ConcurrentHashMap<String, List<Video>> cache,HttpClient httpClient ) {
+        this.sentimentService = sentimentService;
+        this.youTubeService = youTubeService;
+        this.API_KEY = youTubeService.getApiKey();
+        this.API_URL = youTubeService.getApiUrl();
+        this.YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
+        this.cache = cache;
+        this.httpClient=httpClient;
     }
 
     /**
@@ -132,7 +164,7 @@ public class SearchService {
     }
 
     /**
-     * Calculates the overall sentiment for a session’s videos, up to the specified limit.
+     * Calculates the overall sentiment for a sessionâ€™s videos, up to the specified limit.
      *
      * @param sessionId    The session ID for which to calculate overall sentiment.
      * @param numOfResults The maximum number of videos to consider for sentiment analysis.

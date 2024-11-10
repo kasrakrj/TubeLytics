@@ -55,7 +55,36 @@ public class SearchServiceTest {
         testCache = new ConcurrentHashMap<>();
 
         // Create SearchService with injected dependencies
-        searchService = new SearchService(mockSentimentService, mockYouTubeService, testCache, mockHttpClient);
+        searchService = new SearchService(mockSentimentService, mockYouTubeService, testCache,mockHttpClient);
+    }
+    /**
+     * Verifies that the @Inject constructor properly initializes the SearchService.
+     * This ensures that all dependencies are correctly set and the HttpClient is instantiated.
+     */
+    @Test
+    public void testInjectConstructor() {
+
+        // Arrange
+        SentimentService mockSentimentService = mock(SentimentService.class);
+        YouTubeService mockYouTubeService = mock(YouTubeService.class);
+        ConcurrentHashMap<String, List<Video>> testCache = new ConcurrentHashMap<>();
+
+        // Define behavior for mockYouTubeService
+        when(mockYouTubeService.getApiUrl()).thenReturn("https://www.googleapis.com/youtube/v3");
+        when(mockYouTubeService.getApiKey()).thenReturn("FAKE_API_KEY");
+
+        // Act
+        SearchService injectedSearchService = new SearchService(mockSentimentService, mockYouTubeService, testCache);
+
+        // Assert
+        assertNotNull("SearchService instance should not be null", injectedSearchService);
+        assertEquals("API_KEY should match", "FAKE_API_KEY", injectedSearchService.getAPI_KEY());
+        assertEquals("API_URL should match", "https://www.googleapis.com/youtube/v3", injectedSearchService.getAPI_URL());
+        assertEquals("YOUTUBE_SEARCH_URL should be correctly constructed",
+                "https://www.googleapis.com/youtube/v3/search?part=snippet&order=date&type=video&maxResults=",
+                injectedSearchService.getYOUTUBE_SEARCH_URL());
+        assertNotNull("HttpClient should be initialized", injectedSearchService.getHttpClient());
+        assertTrue("Cache should be the same instance", injectedSearchService.getCache() == testCache);
     }
 
     /**
