@@ -8,7 +8,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Service class for generating word-level statistics from a list of Video objects.
+ */
 public class WordStatService {
+    /**
+     * Creates a map of word frequencies based on the titles of the given list of videos.
+     * This method splits each video title into words, normalizes them to lowercase,
+     * removes special characters, and counts the occurrences of each word.
+     *
+     * @param videos a list of {@link Video} objects from which to generate word statistics.
+     * @return a {@link Map} where keys are words (String) and values are their corresponding
+     *         frequency counts (Long), sorted in descending order by frequency, with words
+     *         that appear only once excluded.
+     */
     public Map<String, Long> createWordStats(List<Video> videos){
 
         return videos.stream().map(Video::getTitle)     // Map the videos to their titles
