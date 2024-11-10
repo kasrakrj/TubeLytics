@@ -22,11 +22,12 @@ import java.util.concurrent.CompletionStage;
  */
 public class YoutubeController extends Controller {
 
-    private static final int DEFAULT_NUM_OF_RESULTS = 10;
-    private static final int NUM_OF_RESULTS_SENTIMENT = 50;
+    private  final int DEFAULT_NUM_OF_RESULTS = 10;
+    private  final int NUM_OF_RESULTS_SENTIMENT = 50;
+
+
 
     private final SearchService searchService;
-    private final SentimentService sentimentServiceAnalyzer;
     private final WordStatService wordStatService;
     private final ChannelProfileService channelProfileService;
     private final TagsService tagsService;
@@ -35,19 +36,16 @@ public class YoutubeController extends Controller {
      * Constructs a YoutubeController with injected dependencies.
      *
      * @param searchService          The service for searching YouTube videos.
-     * @param sentimentServiceAnalyzer The service for sentiment analysis of videos.
      * @param wordStatService        The service for generating word statistics from video descriptions.
      * @param channelProfileService  The service for retrieving YouTube channel profiles.
      * @param tagsService            The service for retrieving tags associated with videos.
      */
     @Inject
     public YoutubeController(SearchService searchService,
-                             SentimentService sentimentServiceAnalyzer,
                              WordStatService wordStatService,
                              ChannelProfileService channelProfileService,
                              TagsService tagsService) {
         this.searchService = searchService;
-        this.sentimentServiceAnalyzer = sentimentServiceAnalyzer;
         this.wordStatService = wordStatService;
         this.channelProfileService = channelProfileService;
         this.tagsService = tagsService;

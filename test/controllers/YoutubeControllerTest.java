@@ -8,17 +8,15 @@ import org.junit.Test;
 import play.mvc.Http;
 import play.mvc.Result;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static play.mvc.Http.Status.OK;
 import static play.mvc.Http.Status.SEE_OTHER;
 
@@ -34,13 +32,12 @@ public class YoutubeControllerTest {
     @Before
     public void setUp() {
         mockSearchService = mock(SearchService.class);
-        mockSentimentService = mock(SentimentService.class);
         mockWordStatService = mock(WordStatService.class);
         mockChannelProfileService = mock(ChannelProfileService.class);
         mockTagsService = mock(TagsService.class);
 
         youtubeController = new YoutubeController(
-                mockSearchService, mockSentimentService, mockWordStatService, mockChannelProfileService, mockTagsService);
+                mockSearchService, mockWordStatService, mockChannelProfileService, mockTagsService);
     }
 
     @Test
@@ -92,6 +89,9 @@ public class YoutubeControllerTest {
         Map<String, String> individualSentiments = Map.of("keyword", "positive");
         when(mockSearchService.calculateIndividualSentiments(anyString())).thenReturn(CompletableFuture.completedFuture(individualSentiments));
         when(mockSearchService.calculateOverallSentiment(anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture("positive"));
+
+        // Mocking searchService.getSearchHistory to return some history
+        when(mockSearchService.getSearchHistory("existingSessionId")).thenReturn(Collections.emptyMap());
 
         CompletionStage<Result> resultStage = youtubeController.search("keyword", request);
         Result result = resultStage.toCompletableFuture().join();
@@ -203,5 +203,58 @@ public class YoutubeControllerTest {
 
         assertEquals(SEE_OTHER, resultWhitespace.status()); // 303 See Other
         assertEquals(routes.YoutubeController.index().url(), resultWhitespace.redirectLocation().orElse(""));
+    }
+
+    /**
+     * Tests the search method when there is no existing session.
+     * Expects a new session ID to be generated and added to the response.
+     */
+    @Test
+    public void testSearchNewSession() {
+        // Mock a request with no sessionId
+        Http.Request request = mock(Http.Request.class);
+        when(request.session()).thenReturn(new Http.Session(Map.of())); // No sessionId
+
+        // Mock the searchService methods
+        List<Video> videos = List.of(
+                new Video("New Session Video", "New Description", "New Channel", "https://newthumbnail.url", "newVideoId", "newChannelId", "https://www.youtube.com/watch?v=newVideoId")
+        );
+        when(mockSearchService.searchVideos(anyString(), eq(10))) // 10 is DEFAULT_NUM_OF_RESULTS
+                .thenReturn(CompletableFuture.completedFuture(videos));
+
+        // Mock adding to search history (void method)
+        doNothing().when(mockSearchService).addSearchResultToHistory(anyString(), anyString(), anyList());
+
+        // Mock sentiment calculations
+        when(mockSearchService.calculateOverallSentiment(anyString(), eq(50))) // 50 is NUM_OF_RESULTS_SENTIMENT
+                .thenReturn(CompletableFuture.completedFuture("neutral"));
+
+        Map<String, String> individualSentiments = Map.of("video1", "positive", "video2", "negative");
+        when(mockSearchService.calculateIndividualSentiments(anyString()))
+                .thenReturn(CompletableFuture.completedFuture(individualSentiments));
+
+        // Mock getting search history to return empty map
+        when(mockSearchService.getSearchHistory(anyString()))
+                .thenReturn(Collections.emptyMap());
+
+        // Execute the search method with a new session
+        String searchKeyword = "newKeyword";
+        CompletionStage<Result> resultStage = youtubeController.search(searchKeyword, request);
+        Result result = resultStage.toCompletableFuture().join();
+
+        // Verify the result
+        assertEquals(OK, result.status());
+
+        // Verify that a new sessionId was added
+        String newSessionId = result.session().getOptional("sessionId").orElse(null);
+        assertNotNull("A new session ID should be generated and added to the session", newSessionId);
+        assertFalse("The new session ID should not be empty", newSessionId.isEmpty());
+
+        // Verify that addSearchResultToHistory was called with the new sessionId
+        verify(mockSearchService).addSearchResultToHistory(eq(newSessionId), eq(searchKeyword.toLowerCase()), eq(videos));
+
+        // Verify that sentiment calculations were called with the new sessionId
+        verify(mockSearchService).calculateOverallSentiment(eq(newSessionId), eq(50));
+        verify(mockSearchService).calculateIndividualSentiments(eq(newSessionId));
     }
 }
