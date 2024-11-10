@@ -34,7 +34,7 @@ public class SearchService {
     // In-memory cache for storing search results
     private ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
 
-    private final HttpClient httpClient;
+    private  HttpClient httpClient=HttpClient.newHttpClient();;
 
     /**
      * Constructs a SearchService instance with the provided SentimentService, YouTubeService, cache, and HttpClient.
@@ -43,17 +43,15 @@ public class SearchService {
      * @param sentimentService Service used for calculating sentiment of video descriptions.
      * @param youTubeService   Service used for interacting with the YouTube API.
      * @param cache            In-memory cache for storing search results.
-     * @param httpClient       HttpClient used for making HTTP requests.
      */
     @Inject
-    public SearchService(SentimentService sentimentService, YouTubeService youTubeService, ConcurrentMap<String, List<Video>> cache, HttpClient httpClient) {
+    public SearchService(SentimentService sentimentService, YouTubeService youTubeService, ConcurrentHashMap<String, List<Video>> cache) {
         this.sentimentService = sentimentService;
         this.youTubeService = youTubeService;
         this.API_KEY = youTubeService.getApiKey();
         this.API_URL = youTubeService.getApiUrl();
         this.YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
         this.cache = cache;
-        this.httpClient = httpClient;
     }
 
     /**
