@@ -9,7 +9,6 @@ import play.twirl.api.Html;
 import views.html.channelProfile;
 import models.entities.Video;
 
-import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
