@@ -22,10 +22,10 @@ import java.util.stream.Collectors;
  * and SentimentService to analyze the sentiment of video descriptions.
  */
 public class SearchService {
-    private final YouTubeService youTubeService = new YouTubeService();
-    private final String API_KEY = youTubeService.getApiKey();
-    private final String API_URL = youTubeService.getApiUrl();
-    private final String YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
+    private final YouTubeService youTubeService;
+    private final String API_KEY;
+    private final String API_URL;
+    private final String YOUTUBE_SEARCH_URL;
     private static final int MAX_SEARCH_HISTORY = 10;
     private final Map<String, LinkedHashMap<String, List<Video>>> sessionSearchHistoryMap = new ConcurrentHashMap<>();
 
@@ -34,16 +34,26 @@ public class SearchService {
     // In-memory cache for storing search results
     private ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
 
+    private final HttpClient httpClient;
+
     /**
-     * Constructs a SearchService instance with the provided SentimentService.
+     * Constructs a SearchService instance with the provided SentimentService, YouTubeService, cache, and HttpClient.
      * Initializes API details for YouTubeService and sets up a cache for search results.
      *
      * @param sentimentService Service used for calculating sentiment of video descriptions.
+     * @param youTubeService   Service used for interacting with the YouTube API.
+     * @param cache            In-memory cache for storing search results.
+     * @param httpClient       HttpClient used for making HTTP requests.
      */
     @Inject
-    public SearchService(SentimentService sentimentService,ConcurrentHashMap<String, List<Video>> cache) {
+    public SearchService(SentimentService sentimentService, YouTubeService youTubeService, ConcurrentMap<String, List<Video>> cache, HttpClient httpClient) {
         this.sentimentService = sentimentService;
+        this.youTubeService = youTubeService;
+        this.API_KEY = youTubeService.getApiKey();
+        this.API_URL = youTubeService.getApiUrl();
+        this.YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
         this.cache = cache;
+        this.httpClient = httpClient;
     }
 
     /**
@@ -67,10 +77,9 @@ public class SearchService {
         String encodedKeyword = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
         String apiUrl = YOUTUBE_SEARCH_URL + numOfResults + "&q=" + encodedKeyword + "&key=" + API_KEY;
 
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUrl)).build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     String responseBody = response.body();
                     JSONObject json = new JSONObject(responseBody);
