@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
- * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+ * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  * The SearchService class provides methods to search for videos on YouTube, manage search history,
  * and perform sentiment analysis on search results. It leverages YouTubeService to interact with the YouTube API
  * and SentimentService to analyze the sentiment of video descriptions.
@@ -58,7 +58,7 @@ public class SearchService {
     private  HttpClient httpClient ;
 
     /**
-     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Constructs a SearchService instance with the provided SentimentService, YouTubeService, cache, and HttpClient.
      * Initializes API details for YouTubeService and sets up a cache for search results.
      *
@@ -89,7 +89,7 @@ public class SearchService {
     }
 
     /**
-     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Searches for videos on YouTube based on a keyword and the specified number of results.
      * Results are cached to optimize performance and avoid redundant API calls.
      *
@@ -128,7 +128,7 @@ public class SearchService {
     }
 
     /**
-     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Retrieves the search history for a specific session, limited to the 10 most recent searches.
      *
      * @param sessionId The session ID for retrieving the search history.
@@ -145,7 +145,7 @@ public class SearchService {
     }
 
     /**
-     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Calculates individual sentiment for each keyword in the search history of a session.
      * Uses asynchronous processing for sentiment analysis of video descriptions.
      *
@@ -169,7 +169,7 @@ public class SearchService {
     }
 
     /**
-     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Calculates the overall sentiment for a sessionâ€™s videos, up to the specified limit.
      *
      * @param sessionId    The session ID for which to calculate overall sentiment.
@@ -182,7 +182,7 @@ public class SearchService {
     }
 
     /**
-     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Adds a search result to the history for a given session and keyword.
      * Ensures that only the 10 most recent searches are retained.
      *
@@ -195,7 +195,7 @@ public class SearchService {
     }
 
     /**
-     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Adds or updates a search result in the history for a session, retaining only 10 latest searches.
      * If the search history exceeds 10 entries, the oldest entry is removed.
      *
@@ -219,7 +219,7 @@ public class SearchService {
     }
 
     /**
-     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Gathers all videos from a session's search history, up to a specified limit, for sentiment analysis.
      *
      * @param sessionId The session ID for retrieving all videos.
@@ -241,7 +241,7 @@ public class SearchService {
     }
 
     /**
-     * @author: Zahra Rasouli, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Clears the search history for a specified session.
      *
      * @param sessionId The session ID for which to clear the history.
