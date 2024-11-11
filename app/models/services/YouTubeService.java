@@ -12,10 +12,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  * The YouTubeService class provides utility methods to interact with the YouTube Data API,
  * parse video details, and extract metadata such as tags. It relies on configuration values
  * for API key and URL, which are loaded from an external configuration file.
+ * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  */
 public class YouTubeService {
     private static final Config config = ConfigFactory.load();
@@ -24,17 +24,17 @@ public class YouTubeService {
     private static final String BASE_VIDEO_URL = "https://www.youtube.com/watch?v=";
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Constructs a YouTubeService instance and loads the necessary API configuration.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public YouTubeService() {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Retrieves the YouTube API key from the configuration.
      *
      * @return The API key as a String.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public String getApiKey() {
         return API_KEY;
@@ -50,12 +50,12 @@ public class YouTubeService {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Parses a JSONObject to create a Video object, extracting details such as title, description,
      * channel information, thumbnail URL, and video URL.
      *
      * @param item The JSONObject representing a video item from the YouTube API response.
      * @return A Video object populated with the parsed details or null if the item is empty.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public Video parseVideo(JSONObject item) {
         if (item.isEmpty()) {
@@ -90,11 +90,11 @@ public class YouTubeService {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Parses a JSONArray containing video items and converts each item into a Video object.
      *
      * @param items A JSONArray of video items from the YouTube API response.
      * @return A list of Video objects parsed from the JSONArray.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public List<Video> parseVideos(JSONArray items) {
         List<Video> videos = new ArrayList<>();
@@ -109,27 +109,32 @@ public class YouTubeService {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Parses a JSONArray to extract tags from the first item in the array using Java Streams.
      *
      * @param items A JSONArray of video items, with each item potentially containing tags.
      * @return A list of tags if present, otherwise an empty list.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public List<String> parseTags(JSONArray items) {
         if (items.length() > 0) {
             JSONObject item = items.getJSONObject(0);
-            JSONObject snippet = item.getJSONObject("snippet");
 
-            if (snippet.has("tags")) {
-                JSONArray tagArray = snippet.getJSONArray("tags");
+            // Check if 'snippet' exists before accessing it
+            if (item.has("snippet")) {
+                JSONObject snippet = item.getJSONObject("snippet");
 
-                // Use streams to map each tag to its encoded URL and collect them into a list
-                return IntStream.range(0, tagArray.length())
-                        .mapToObj(tagArray::getString)
-                        .collect(Collectors.toList());
+                if (snippet.has("tags")) {
+                    JSONArray tagArray = snippet.getJSONArray("tags");
+
+                    // Use streams to map each tag to its encoded URL and collect them into a list
+                    return IntStream.range(0, tagArray.length())
+                            .mapToObj(tagArray::getString)
+                            .collect(Collectors.toList());
+                }
             }
         }
 
         return List.of(); // Return an empty list if no tags are found
     }
+
 }

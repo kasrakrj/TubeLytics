@@ -2,16 +2,17 @@ package models.services;
 
 import models.entities.Video;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.*;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -20,7 +21,6 @@ import java.util.concurrent.CompletionStage;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for the SearchService class. This test suite verifies caching behavior, search history management,
@@ -423,4 +423,75 @@ public class SearchServiceTest {
             assertEquals("Video title should match", "Video " + (i + 1), video.getTitle());
         }
     }
+
+    /**
+     * Tests removeOldestEntry to confirm that the oldest entry is removed when history size is at the maximum limit.
+     */
+
+    @Test
+    public void testRemoveOldestEntry() {
+        // Set up a LinkedHashMap with a size at the limit
+        LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
+        for (int i = 1; i <= 10; i++) { // Assuming MAX_SEARCH_HISTORY is 10
+            searchHistory.put("keyword" + i, List.of(
+                    new Video("Video " + i, "Description " + i, "Channel " + i,
+                            "https://thumbnail" + i + ".url", "videoId" + i,
+                            "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i)
+            ));
+        }
+
+        // Call the removeOldestEntry helper method
+        searchService.removeOldestEntry(searchHistory);
+
+        // Verify that the oldest entry was removed
+        assertEquals("History size should be one less after removal", 9, searchHistory.size());
+        assertFalse("Oldest entry (keyword1) should be removed", searchHistory.containsKey("keyword1"));
+    }
+
+    /**
+     * Verifies removeOldestEntry's behavior by checking direct state changes to ensure it removes the oldest entry.
+     */
+    @Test
+    public void testRemoveOldestEntryDirectStateVerification() {
+        // Create a LinkedHashMap and fill it to the maximum capacity
+        LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
+        for (int i = 1; i <= 10; i++) { // Assuming MAX_SEARCH_HISTORY is 10
+            searchHistory.put("keyword" + i, List.of(
+                    new Video("Video " + i, "Description " + i, "Channel " + i,
+                            "https://thumbnail" + i + ".url", "videoId" + i,
+                            "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i)
+            ));
+        }
+
+        // Confirm that "keyword1" is the first entry and exists before removal
+        assertTrue("The first entry should be 'keyword1' before removal", searchHistory.containsKey("keyword1"));
+
+        // Call the removeOldestEntry method directly
+        searchService.removeOldestEntry(searchHistory);
+
+        // Verify that the oldest entry ("keyword1") was removed
+        assertEquals("History size should be reduced by 1 after removal", 9, searchHistory.size());
+        assertFalse("Oldest entry (keyword1) should be removed", searchHistory.containsKey("keyword1"));
+
+        // Check that the next expected oldest entry ("keyword2") is now present as the first entry
+        assertTrue("The next entry 'keyword2' should remain after removal", searchHistory.containsKey("keyword2"));
+    }
+
+    /**
+     * Tests removeOldestEntry on an empty search history, confirming no exceptions and no changes to history state.
+     */
+    @Test
+    public void testRemoveOldestEntryWithEmptyHistory() {
+        // Create an empty LinkedHashMap
+        LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
+
+        // Call removeOldestEntry on the empty history
+        searchService.removeOldestEntry(searchHistory);
+
+        // Verify that the history is still empty after calling the method
+        assertTrue("History should remain empty after calling removeOldestEntry on an empty map", searchHistory.isEmpty());
+    }
+
+
+
 }
