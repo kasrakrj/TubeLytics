@@ -14,7 +14,6 @@ import java.util.concurrent.CompletionStage;
 /**
  * The TagsService class provides methods for retrieving tags and video details from YouTube using the YouTube Data API.
  * It utilizes YouTubeService to interact with the API and parse the responses.
- * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  */
 public class TagsService {
     private final YouTubeService youTubeService = new YouTubeService();
@@ -24,7 +23,6 @@ public class TagsService {
      *
      * @param video The Video object containing the video ID for which to retrieve tags.
      * @return CompletionStage of a list of tags associated with the video.
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<List<String>> getTagsByVideo(Video video) {
         String apiUrl = "https://www.googleapis.com/youtube/v3/videos?part=snippet&id="
@@ -49,7 +47,6 @@ public class TagsService {
      *
      * @param videoId The ID of the video for which to retrieve details.
      * @return CompletionStage of a Video object containing details of the specified video.
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Video> getVideoByVideoId(String videoId) {
         String apiUrl = youTubeService.getApiUrl() + "/videos?part=snippet&id="

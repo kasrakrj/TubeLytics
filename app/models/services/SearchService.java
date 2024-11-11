@@ -204,20 +204,29 @@ public class SearchService {
      * @param videos    The list of videos to add or update in the history.
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
+
+
     public void addSearchResult(String sessionId, String keyword, List<Video> videos) {
         LinkedHashMap<String, List<Video>> searchHistory = sessionSearchHistoryMap.computeIfAbsent(sessionId, k -> new LinkedHashMap<>());
 
         synchronized (searchHistory) {
             if (searchHistory.size() >= MAX_SEARCH_HISTORY) {
-                Iterator<String> iterator = searchHistory.keySet().iterator();
-                if (iterator.hasNext()) {
-                    iterator.next();
-                    iterator.remove();
-                }
+                removeOldestEntry(searchHistory); // Use helper method
             }
             searchHistory.put(keyword, videos);
         }
     }
+
+    //  removeOldestEntry method in SearchService
+    public void removeOldestEntry(LinkedHashMap<String, List<Video>> searchHistory) {
+        if (!searchHistory.isEmpty()) {
+            // Get the first key and remove it
+            String oldestKey = searchHistory.entrySet().iterator().next().getKey();
+            searchHistory.remove(oldestKey);
+        }
+    }
+
+
 
     /**
      * Gathers all videos from a session's search history, up to a specified limit, for sentiment analysis.
@@ -240,6 +249,7 @@ public class SearchService {
                     .collect(Collectors.toList());
         }
     }
+
 
     /**
      * Clears the search history for a specified session.

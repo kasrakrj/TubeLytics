@@ -118,18 +118,23 @@ public class YouTubeService {
     public List<String> parseTags(JSONArray items) {
         if (items.length() > 0) {
             JSONObject item = items.getJSONObject(0);
-            JSONObject snippet = item.getJSONObject("snippet");
 
-            if (snippet.has("tags")) {
-                JSONArray tagArray = snippet.getJSONArray("tags");
+            // Check if 'snippet' exists before accessing it
+            if (item.has("snippet")) {
+                JSONObject snippet = item.getJSONObject("snippet");
 
-                // Use streams to map each tag to its encoded URL and collect them into a list
-                return IntStream.range(0, tagArray.length())
-                        .mapToObj(tagArray::getString)
-                        .collect(Collectors.toList());
+                if (snippet.has("tags")) {
+                    JSONArray tagArray = snippet.getJSONArray("tags");
+
+                    // Use streams to map each tag to its encoded URL and collect them into a list
+                    return IntStream.range(0, tagArray.length())
+                            .mapToObj(tagArray::getString)
+                            .collect(Collectors.toList());
+                }
             }
         }
 
         return List.of(); // Return an empty list if no tags are found
     }
+
 }

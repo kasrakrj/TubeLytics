@@ -5,7 +5,6 @@ import play.mvc.Http;
 import play.mvc.Result;
 
 import models.services.SearchService;
-import models.services.SentimentService;
 import models.services.WordStatService;
 import models.services.ChannelProfileService;
 import models.services.TagsService;
