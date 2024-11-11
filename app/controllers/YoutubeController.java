@@ -16,10 +16,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  * The YoutubeController class provides the main entry points for handling user interactions
  * with the YouTube API, including searching for videos, viewing tags, generating word statistics,
  * and retrieving channel profiles. It manages session data and handles asynchronous requests.
+ * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  */
 public class YoutubeController extends Controller {
 
@@ -34,13 +34,13 @@ public class YoutubeController extends Controller {
     private final TagsService tagsService;
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Constructs a YoutubeController with injected dependencies.
      *
      * @param searchService          The service for searching YouTube videos.
      * @param wordStatService        The service for generating word statistics from video descriptions.
      * @param channelProfileService  The service for retrieving YouTube channel profiles.
      * @param tagsService            The service for retrieving tags associated with videos.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     @Inject
     public YoutubeController(SearchService searchService,
@@ -54,22 +54,22 @@ public class YoutubeController extends Controller {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Helper method to retrieve the session ID from the request. If not present, generates a new one.
      *
      * @param request The HTTP request from the client.
      * @return The session ID as a String.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     private String getSessionId(Http.Request request) {
         return request.session().getOptional("sessionId").orElse(null);
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Renders the index page, initializing a session ID if it doesn't exist.
      *
      * @param request The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the index page.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> index(Http.Request request) {
         String sessionId = getSessionId(request);
@@ -84,12 +84,12 @@ public class YoutubeController extends Controller {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Renders the tags page for a specific video by ID.
      *
      * @param videoID The ID of the video for which to retrieve tags.
      * @param request The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the tags page or an error page if an issue occurs.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> tags(String videoID, Http.Request request) {
         return tagsService.getVideoByVideoId(videoID)
@@ -104,12 +104,12 @@ public class YoutubeController extends Controller {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Performs a video search based on a keyword, storing search history and calculating sentiment.
      *
      * @param keyword The keyword to search for.
      * @param request The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the search results page or an error page if an issue occurs.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> search(String keyword, Http.Request request) {
         if (keyword == null || keyword.trim().isEmpty()) {
@@ -152,12 +152,12 @@ public class YoutubeController extends Controller {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Renders the channel profile page for a given channel ID, including channel information and videos.
      *
      * @param channelId The ID of the YouTube channel.
      * @param request   The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the channel profile page or an error page if an issue occurs.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> channelProfile(String channelId, Http.Request request) {
         return channelProfileService.getChannelInfo(channelId)
@@ -171,12 +171,12 @@ public class YoutubeController extends Controller {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      * Generates word statistics for a given search keyword and displays them on the word statistics page.
      *
      * @param keyword The keyword for which to generate word statistics.
      * @param request The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the word statistics page or an error page if an issue occurs.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> wordStats(String keyword, Http.Request request) {
         if (keyword == null || keyword.trim().isEmpty()) {

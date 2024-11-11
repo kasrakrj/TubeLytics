@@ -18,10 +18,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * @author: Mojtaba Peyrovian
  * Unit tests for the TagsService class. This test suite verifies the functionality
  * of retrieving tags for a video and fetching video details by video ID from YouTube.
  * Mocks are used for dependencies such as YouTubeService and HttpClient.
+ * @author: Mojtaba Peyrovian
  */
 public class TagsServiceTest {
 
@@ -31,9 +31,9 @@ public class TagsServiceTest {
     private HttpResponse<String> mockResponse;
 
     /**
-     * @author: Mojtaba Peyrovian
      * Sets up the necessary mocks and initializes the TagsService instance
      * before each test.
+     * @author: Mojtaba Peyrovian
      */
     @Before
     public void setUp() {
@@ -45,7 +45,6 @@ public class TagsServiceTest {
     }
 
     /**
-     * @author: Mojtaba Peyrovian
      * Tests the getTagsByVideo method in TagsService, ensuring that it retrieves the
      * correct tags for a given video.
      * <p>
@@ -54,6 +53,7 @@ public class TagsServiceTest {
      * </p>
      *
      * @throws Exception if any asynchronous operation fails
+     * @author: Mojtaba Peyrovian
      */
     @Test
     public void testGetTagsByVideo() throws Exception {
@@ -94,7 +94,6 @@ public class TagsServiceTest {
     }
 
     /**
-     * @author: Mojtaba Peyrovian
      * Tests the getVideoByVideoId method in TagsService, verifying that it retrieves the
      * correct video details when given a video ID.
      * <p>
@@ -103,6 +102,7 @@ public class TagsServiceTest {
      * </p>
      *
      * @throws Exception if any asynchronous operation fails
+     * @author: Mojtaba Peyrovian
      */
     @Test
     public void testGetVideoByVideoId() throws Exception {
