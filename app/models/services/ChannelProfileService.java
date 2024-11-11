@@ -17,6 +17,7 @@ import java.util.concurrent.CompletionStage;
  *
  * <p>This service uses the YouTube Data API to fetch channel details and video lists.
  * It depends on {@link YouTubeService} for API configurations such as base URL and API key.</p>
+ * @author Zahra Rasoulifar
  */
 public class ChannelProfileService {
     YouTubeService youTubeService;
@@ -25,6 +26,7 @@ public class ChannelProfileService {
      * Constructs a new {@code ChannelProfileService} with the specified {@link YouTubeService}.
      *
      * @param youTubeService the YouTube service providing API configurations
+     * @author Zahra Rasoulifar
      */
     @Inject
     public ChannelProfileService(YouTubeService youTubeService) {
@@ -35,6 +37,7 @@ public class ChannelProfileService {
      * Creates a new {@link HttpClient} instance.
      *
      * @return a new {@link HttpClient}
+     * @author Zahra Rasoulifar
      */
     protected HttpClient createHttpClient() {
         return HttpClient.newHttpClient();
@@ -51,6 +54,7 @@ public class ChannelProfileService {
      *
      * @param channelId the YouTube channel ID
      * @return a {@link CompletionStage} containing a {@link JSONObject} with the channel's snippet information
+     * @author Zahra Rasoulifar
      */
     public CompletionStage<JSONObject> getChannelInfo(String channelId) {
         String youtubeChannelUrl = youTubeService.getApiUrl() + "/search?part=snippet&type=video&";
@@ -77,6 +81,7 @@ public class ChannelProfileService {
      * @param channelId  the YouTube channel ID
      * @param maxResults the maximum number of videos to retrieve
      * @return a {@link CompletionStage} containing a {@link List} of {@link Video} objects
+     * @author Zahra Rasoulifar
      */
     public CompletionStage<List<Video>> getChannelVideos(String channelId, int maxResults) {
         String youtubeChannelVideosUrl = youTubeService.getApiUrl() + "/search?part=snippet&type=video&";
