@@ -1,4 +1,5 @@
 package models.services;
+
 import models.entities.Video;
 import models.services.ChannelProfileService;
 import models.services.YouTubeService;
@@ -19,6 +20,13 @@ import java.util.concurrent.CompletionStage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for the ChannelProfileService class.
+ * This test class verifies the methods for fetching channel information and videos
+ * using the YouTube API, ensuring proper handling of various response scenarios.
+ *
+ * @author: Zahra Rasoulifar
+ */
 public class ChannelProfileServiceTest {
 
     @Mock
@@ -32,6 +40,11 @@ public class ChannelProfileServiceTest {
 
     private ChannelProfileService channelProfileService;
 
+    /**
+     * Initializes mock objects and sets up the ChannelProfileService instance
+     * with a mocked HttpClient before each test.
+     * @author: Zahra Rasoulifar
+     */
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -44,6 +57,13 @@ public class ChannelProfileServiceTest {
         };
     }
 
+    /**
+     * Tests the getChannelInfo method to ensure that it correctly retrieves channel
+     * information from the YouTube API and parses the response.
+     *
+     * @throws Exception if an error occurs during the test.
+     * @author: Zahra Rasoulifar
+     */
     @Test
     public void testGetChannelInfo() throws Exception {
         String channelId = "testChannelId";
@@ -69,6 +89,13 @@ public class ChannelProfileServiceTest {
         )), eq(HttpResponse.BodyHandlers.ofString()));
     }
 
+    /**
+     * Tests the getChannelVideos method to ensure it correctly retrieves a list of videos
+     * from a specified YouTube channel and parses the response.
+     *
+     * @throws Exception if an error occurs during the test.
+     * @author: Zahra Rasoulifar
+     */
     @Test
     public void testGetChannelVideos() throws Exception {
         String channelId = "testChannelId";
@@ -102,6 +129,10 @@ public class ChannelProfileServiceTest {
         verify(youTubeService).parseVideos(any(JSONArray.class));
     }
 
+    /**
+     * Tests the createHttpClient method to ensure it returns a valid HttpClient instance.
+     * @author: Zahra Rasoulifar
+     */
     @Test
     public void testCreateHttpClient() {
         ChannelProfileService service = new ChannelProfileService(youTubeService);
