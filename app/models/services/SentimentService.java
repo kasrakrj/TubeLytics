@@ -16,7 +16,7 @@ import models.entities.Video;
  * based on the occurrence of specific words. The average sentiment is calculated
  * asynchronously, using non-blocking operations.
  *
- * @author Hosna Habibi
+ * @Author Hosna Habibi
  */
 public class SentimentService {
 
