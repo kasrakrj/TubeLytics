@@ -1,5 +1,6 @@
 package models.services;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -92,7 +93,7 @@ public class SentimentService {
     /**
      * Calculate the average sentiment for a list of video descriptions asynchronously.
      *
-     * @param videos the list of videos for which we want to analyze overall sentiment
+     * @param videos the list of videos for which to analyze overall sentiment
      * @return a CompletionStage<String> representing the overall sentiment asynchronously
      */
     public CompletionStage<String> avgSentiment(List<Video> videos) {
@@ -100,7 +101,8 @@ public class SentimentService {
             return CompletableFuture.completedFuture(":-|"); // Neutral if no videos are present
         }
 
-        List<CompletableFuture<Integer>> sentimentFutures = videos.stream()
+        // Map each video's description to a future that calculates its sentiment score
+        List<CompletionStage<Integer>> sentimentStages = videos.stream()
                 .map(video -> CompletableFuture.supplyAsync(() -> calculateSentiment(video.getDescription())))
                 .map(future -> future.thenApply(sentiment -> {
                     switch (sentiment) {
@@ -111,16 +113,44 @@ public class SentimentService {
                 }))
                 .collect(Collectors.toList());
 
-        return CompletableFuture.allOf(sentimentFutures.toArray(new CompletableFuture[0]))
-                .thenCompose(v -> CompletableFuture.supplyAsync(() -> {
-                    double averageScore = sentimentFutures.stream()
-                            .mapToInt(f -> f.join()) // Safe within this async context to combine results
-                            .average()
-                            .orElse(0);
+        // Combine all sentiment scores into a single CompletionStage
+        CompletionStage<List<Integer>> allSentimentsStage = sequence(sentimentStages);
 
-                    if (averageScore > 0) return ":-)"; // Overall Happy
-                    else if (averageScore < 0) return ":-("; // Overall Sad
-                    else return ":-|"; // Overall Neutral
-                }));
+        // Calculate the average sentiment score once all futures are completed
+        return allSentimentsStage.thenApply(sentiments -> {
+            double averageScore = sentiments.stream()
+                    .mapToInt(Integer::intValue)
+                    .average()
+                    .orElse(0);
+
+            if (averageScore > 0) return ":-)"; // Overall Happy
+            else if (averageScore < 0) return ":-("; // Overall Sad
+            else return ":-|"; // Overall Neutral
+        });
     }
+
+    /**
+     * Utility method to combine a list of CompletionStage<T> into a single CompletionStage<List<T>>.
+     *
+     * @param stages List of CompletionStage instances
+     * @param <T>    The type of result each CompletionStage produces
+     * @return A CompletionStage containing a list of all results
+     */
+    private <T> CompletionStage<List<T>> sequence(List<CompletionStage<T>> stages) {
+        CompletableFuture<List<T>> result = CompletableFuture.completedFuture(List.of());
+
+        for (CompletionStage<T> stage : stages) {
+            result = result.thenCombine(
+                    stage,
+                    (list, item) -> {
+                        List<T> newList = new ArrayList<>(list);
+                        newList.add(item);
+                        return newList;
+                    }
+            );
+        }
+
+        return result;
+    }
+
 }

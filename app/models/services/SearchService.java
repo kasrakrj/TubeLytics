@@ -153,21 +153,31 @@ public class SearchService {
      * @return CompletionStage of a map where each keyword is associated with its sentiment.
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
-    public CompletionStage<Map<String, String>> calculateIndividualSentiments(String sessionId) {
+    public CompletionStage<Map<String, String>> calculateSentiments(String sessionId) {
         Map<String, List<Video>> searchHistory = getSearchHistory(sessionId);
 
-        // Compute sentiment for each keyword in search history
-        List<CompletableFuture<Map.Entry<String, String>>> sentimentFutures = searchHistory.entrySet().stream()
+        // Map each search history entry to a CompletionStage of Map.Entry
+        List<CompletionStage<Map.Entry<String, String>>> sentimentStages = searchHistory.entrySet().stream()
                 .map(entry -> sentimentService.avgSentiment(entry.getValue())
-                        .thenApply(sentiment -> Map.entry(entry.getKey(), sentiment))
-                        .toCompletableFuture())
+                        .thenApply(sentiment -> Map.entry(entry.getKey(), sentiment)))
                 .collect(Collectors.toList());
 
-        return CompletableFuture.allOf(sentimentFutures.toArray(new CompletableFuture[0]))
-                .thenApply(v -> sentimentFutures.stream()
-                        .map(CompletableFuture::join)
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+        // Combine all CompletionStages into a single CompletionStage of the final map
+        return CompletableFuture.allOf(sentimentStages.toArray(new CompletableFuture[0]))
+                .thenCompose(v -> {
+                    // Collect the results asynchronously after all stages are complete
+                    List<CompletionStage<Map.Entry<String, String>>> completedStages = sentimentStages;
+                    CompletionStage<Map<String, String>> finalResultStage = CompletableFuture.completedFuture(new HashMap<>());
+                    for (CompletionStage<Map.Entry<String, String>> stage : completedStages) {
+                        finalResultStage = finalResultStage.thenCombine(stage, (map, entry) -> {
+                            map.put(entry.getKey(), entry.getValue());
+                            return map;
+                        });
+                    }
+                    return finalResultStage;
+                });
     }
+
 
     /**
      * Calculates the overall sentiment for a sessionâ€™s videos, up to the specified limit.
@@ -177,10 +187,10 @@ public class SearchService {
      * @return CompletionStage of a string representing the overall sentiment.
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
-    public CompletionStage<String> calculateOverallSentiment(String sessionId, int numOfResults) {
+   /* public CompletionStage<String> calculateOverallSentiment(String sessionId, int numOfResults) {
         List<Video> allVideos = getAllVideosForSentiment(sessionId, numOfResults);
         return sentimentService.avgSentiment(allVideos);
-    }
+    }*/
 
     /**
      * Adds a search result to the history for a given session and keyword.

@@ -1,5 +1,6 @@
 package controllers;
 
+import models.entities.Video;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -130,15 +131,19 @@ public class YoutubeController extends Controller {
 
         final String finalSessionId = sessionId;
 
-        return searchService.searchVideos(standardizedKeyword, DEFAULT_NUM_OF_RESULTS)
+        return searchService.searchVideos(standardizedKeyword, NUM_OF_RESULTS_SENTIMENT)
                 .thenCompose(videos -> {
                     searchService.addSearchResultToHistory(finalSessionId, standardizedKeyword, videos);
 
-                    CompletionStage<String> overallSentimentFuture = searchService.calculateOverallSentiment(finalSessionId, NUM_OF_RESULTS_SENTIMENT);
-                    CompletionStage<Map<String, String>> individualSentimentsCombined = searchService.calculateIndividualSentiments(finalSessionId);
+                    // Calculate individual sentiments for all 50 videos
+                    CompletionStage<Map<String, String>> individualSentimentsCombined = searchService.calculateSentiments(finalSessionId);
 
-                    return individualSentimentsCombined.thenCombine(overallSentimentFuture, (individualSentiments, overallSentiment) -> {
-                        Result result = ok(views.html.searchResults.render(searchService.getSearchHistory(finalSessionId), overallSentiment, individualSentiments));
+                    return individualSentimentsCombined.thenApply(individualSentiments -> {
+                        // Limit the displayed videos to only the first 10
+                        List<Video> top10Videos = videos.stream().limit(DEFAULT_NUM_OF_RESULTS).toList();
+
+                        // Pass the top 10 videos to the view for rendering
+                        Result result = ok(views.html.searchResults.render(searchService.getSearchHistory(finalSessionId), null, individualSentiments));
                         if (isNewSession) {
                             result = result.addingToSession(request, "sessionId", finalSessionId);
                         }
@@ -149,6 +154,8 @@ public class YoutubeController extends Controller {
                     return internalServerError(views.html.errorPage.render("An error occurred while fetching search results."));
                 });
     }
+
+
 
     /**
      * Renders the channel profile page for a given channel ID, including channel information and videos.

@@ -131,17 +131,17 @@
 </form>
 
 @for((keyword, videos) <- searchHistory.toSeq.reverse) {
-<h2>SearchResult Results for '@keyword'</h2>
+<h2>Search Results for '@keyword'</h2>
 <div class="sentiment">
     Sentiment for '@keyword': @individualSentiments(keyword)
 </div>
 
 <div>
-    <a href="@routes.YoutubeController.wordStats(keyword)"> SearchResult Stats </a>
+    <a href="@routes.YoutubeController.wordStats(keyword)"> Search Stats </a>
 </div>
 
 <ul>
-    @for(video <- videos) {
+    @for(video <- videos.take(10)) {  <!-- This will limit the display to 10 -->
     <li>
         <img src="@video.getThumbnailUrl()" alt="Thumbnail">
         <div>
@@ -157,4 +157,5 @@
     }
 </ul>
 }
+
 }
