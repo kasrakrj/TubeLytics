@@ -1,5 +1,7 @@
 package models.entities;
 
+import java.util.Objects;
+
 /**
  * Represents a YouTube video with associated metadata.
  * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
@@ -180,5 +182,31 @@ public class Video {
      */
     public void setVideoURL(String videoURL) {
         VideoURL = videoURL;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Video video = (Video) o;
+        return videoId.equals(video.videoId) && channelId.equals(video.channelId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(videoId, channelId);
+    }
+
+    @Override
+    public String toString() {
+        return "Video{" +
+                "title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", channelTitle='" + channelTitle + '\'' +
+                ", thumbnailUrl='" + thumbnailUrl + '\'' +
+                ", videoId='" + videoId + '\'' +
+                ", channelId='" + channelId + '\'' +
+                ", VideoURL='" + VideoURL + '\'' +
+                '}';
     }
 }

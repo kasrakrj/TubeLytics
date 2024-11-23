@@ -6,8 +6,12 @@ import models.entities.Video;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -15,6 +19,7 @@ import java.util.stream.IntStream;
  * The YouTubeService class provides utility methods to interact with the YouTube Data API,
  * parse video details, and extract metadata such as tags. It relies on configuration values
  * for API key and URL, which are loaded from an external configuration file.
+ *
  * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  */
 public class YouTubeService {
@@ -22,13 +27,6 @@ public class YouTubeService {
     private static final String API_KEY = config.getString("youtube.api.key");
     private static final String API_URL = config.getString("youtube.api.url");
     private static final String BASE_VIDEO_URL = "https://www.youtube.com/watch?v=";
-
-    /**
-     * Constructs a YouTubeService instance and loads the necessary API configuration.
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
-     */
-    public YouTubeService() {
-    }
 
     /**
      * Retrieves the YouTube API key from the configuration.

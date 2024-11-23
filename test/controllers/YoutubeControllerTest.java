@@ -37,7 +37,7 @@ public class YoutubeControllerTest {
         mockTagsService = mock(TagsService.class);
 
         youtubeController = new YoutubeController(
-                mockSearchService, mockWordStatService, mockChannelProfileService, mockTagsService);
+                mockSearchService, mockWordStatService, mockChannelProfileService, mockTagsService, actorSystem, materializer);
     }
 
     @Test

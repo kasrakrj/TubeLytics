@@ -1,6 +1,11 @@
 package controllers;
 
+import actors.UserActor;
+import akka.actor.ActorSystem;
+import akka.stream.Materializer;
+import akka.stream.javadsl.Flow;
 import models.entities.Video;
+import play.libs.streams.ActorFlow;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -9,23 +14,25 @@ import models.services.SearchService;
 import models.services.WordStatService;
 import models.services.ChannelProfileService;
 import models.services.TagsService;
+import play.mvc.WebSocket;
 
 import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 /**
  * The YoutubeController class provides the main entry points for handling user interactions
  * with the YouTube API, including searching for videos, viewing tags, generating word statistics,
  * and retrieving channel profiles. It manages session data and handles asynchronous requests.
+ *
  * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  */
 public class YoutubeController extends Controller {
 
-    private  final int DEFAULT_NUM_OF_RESULTS = 10;
-    private  final int NUM_OF_RESULTS_SENTIMENT = 50;
-
+    private final int DEFAULT_NUM_OF_RESULTS = 10;
+    private final int NUM_OF_RESULTS_SENTIMENT = 50;
 
 
     private final SearchService searchService;
@@ -33,24 +40,33 @@ public class YoutubeController extends Controller {
     private final ChannelProfileService channelProfileService;
     private final TagsService tagsService;
 
+    private final ActorSystem actorSystem;
+    private final Materializer materializer;
+
     /**
      * Constructs a YoutubeController with injected dependencies.
      *
-     * @param searchService          The service for searching YouTube videos.
-     * @param wordStatService        The service for generating word statistics from video descriptions.
-     * @param channelProfileService  The service for retrieving YouTube channel profiles.
-     * @param tagsService            The service for retrieving tags associated with videos.
+     * @param searchService         The service for searching YouTube videos.
+     * @param wordStatService       The service for generating word statistics from video descriptions.
+     * @param channelProfileService The service for retrieving YouTube channel profiles.
+     * @param tagsService           The service for retrieving tags associated with videos.
+     * @param actorSystem
+     * @param materializer
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     @Inject
     public YoutubeController(SearchService searchService,
                              WordStatService wordStatService,
                              ChannelProfileService channelProfileService,
-                             TagsService tagsService) {
+                             TagsService tagsService,
+                             ActorSystem actorSystem,
+                             Materializer materializer) {
         this.searchService = searchService;
         this.wordStatService = wordStatService;
         this.channelProfileService = channelProfileService;
         this.tagsService = tagsService;
+        this.actorSystem = actorSystem;
+        this.materializer = materializer;
     }
 
     /**
@@ -133,17 +149,26 @@ public class YoutubeController extends Controller {
 
         return searchService.searchVideos(standardizedKeyword, NUM_OF_RESULTS_SENTIMENT)
                 .thenCompose(videos -> {
-                    searchService.addSearchResultToHistory(finalSessionId, standardizedKeyword, videos);
+                    // Limit to top 10 videos
+                    List<Video> top10Videos = videos.stream().limit(DEFAULT_NUM_OF_RESULTS).collect(Collectors.toList());
 
-                    // Calculate individual sentiments for all 50 videos
+                    // Add only top 10 videos to the search history
+                    searchService.addSearchResultToHistory(finalSessionId, standardizedKeyword, top10Videos);
+
+                    // Calculate individual sentiments
                     CompletionStage<Map<String, String>> individualSentimentsCombined = searchService.calculateSentiments(finalSessionId);
 
                     return individualSentimentsCombined.thenApply(individualSentiments -> {
-                        // Limit the displayed videos to only the first 10
-                        List<Video> top10Videos = videos.stream().limit(DEFAULT_NUM_OF_RESULTS).toList();
+                        // Retrieve the entire search history for the session
+                        Map<String, List<Video>> searchHistory = searchService.getSearchHistory(finalSessionId);
 
-                        // Pass the top 10 videos to the view for rendering
-                        Result result = ok(views.html.searchResults.render(searchService.getSearchHistory(finalSessionId), null, individualSentiments));
+                        // Pass the entire search history to the view
+                        Result result = ok(views.html.searchResults.render(
+                                searchHistory,
+                                null,
+                                individualSentiments,
+                                standardizedKeyword
+                        ));
                         if (isNewSession) {
                             result = result.addingToSession(request, "sessionId", finalSessionId);
                         }
@@ -154,6 +179,7 @@ public class YoutubeController extends Controller {
                     return internalServerError(views.html.errorPage.render("An error occurred while fetching search results."));
                 });
     }
+
 
 
 
@@ -203,4 +229,20 @@ public class YoutubeController extends Controller {
                     return internalServerError(views.html.errorPage.render("An error occurred while fetching word stats."));
                 });
     }
+
+    public WebSocket ws() {
+        return WebSocket.Text.accept(request -> {
+            String sessionId = getSessionId(request);
+            return ActorFlow.actorRef(
+                    out -> UserActor.props(out, searchService, sessionId),
+                    actorSystem,
+                    materializer
+            );
+        });
+    }
+
+    private String getSessionId(Http.RequestHeader request) {
+        return request.session().getOptional("sessionId").orElse(null);
+    }
+
 }
