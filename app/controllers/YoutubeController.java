@@ -3,8 +3,6 @@ package controllers;
 import actors.UserActor;
 import akka.actor.ActorSystem;
 import akka.stream.Materializer;
-import akka.stream.javadsl.Flow;
-import models.entities.Video;
 import models.services.*;
 import play.libs.streams.ActorFlow;
 import play.mvc.Controller;
@@ -14,12 +12,10 @@ import play.mvc.Result;
 import play.mvc.WebSocket;
 
 import javax.inject.Inject;
-import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
-import static models.services.ContorllerHelper.isKeywordValid;
+import static models.services.ControllerHelper.searchHelper;
 import static models.services.SessionService.*;
 
 /**
@@ -30,10 +26,6 @@ import static models.services.SessionService.*;
  * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  */
 public class YoutubeController extends Controller {
-
-    private final int DEFAULT_NUM_OF_RESULTS = 10;
-    private final int NUM_OF_RESULTS_SENTIMENT = 50;
-
 
     private final SearchService searchService;
     private final WordStatService wordStatService;
@@ -89,14 +81,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> tags(String videoID, Http.Request request) {
-        return tagsService.getVideoByVideoId(videoID)
-                .thenCompose(video ->
-                        tagsService.getTagsByVideo(video)
-                                .thenApply(tags -> addSessionId(request, ok(views.html.tagsPage.render(video, tags))))
-                ).exceptionally(ex -> {
-                    ex.printStackTrace();
-                    return internalServerError(views.html.errorPage.render("An error occurred while fetching tags."));
-                });
+        return ControllerHelper.tagHelper(tagsService, videoID, request);
     }
 
     /**
@@ -108,44 +93,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> search(String keyword, Http.Request request) {
-        if (!isKeywordValid(keyword)) {
-            return CompletableFuture.completedFuture(
-                    redirect(routes.YoutubeController.index()).withSession(request.session())
-            );
-        }
-
-        String standardizedKeyword = keyword.trim().toLowerCase();
-
-        // TODO: SHOULD BE UPDATED TO SET TO 50 FOR SENTIMENT
-        return searchService.searchVideos(standardizedKeyword, NUM_OF_RESULTS_SENTIMENT)
-                .thenCompose(videos -> {
-                    // Limit to top 10 videos
-                    List<Video> top10Videos = videos.stream().limit(DEFAULT_NUM_OF_RESULTS).collect(Collectors.toList());
-
-                    // Add only top 10 videos to the search history
-                    searchService.addSearchResultToHistory(getSessionId(request), standardizedKeyword, top10Videos);
-
-                    // Calculate individual sentiments
-                    CompletionStage<Map<String, String>> individualSentimentsCombined = searchService.calculateSentiments(getSessionId(request));
-
-                    return individualSentimentsCombined.thenApply(individualSentiments -> {
-                        // Retrieve the entire search history for the session
-                        Map<String, List<Video>> searchHistory = searchService.getSearchHistory(getSessionId(request));
-
-                        // Pass the entire search history to the view
-                        Result result = ok(views.html.searchResults.render(
-                                searchHistory,
-                                null,
-                                individualSentiments,
-                                standardizedKeyword
-                        ));
-
-                        return addSessionId(request, result);
-                    });
-                }).exceptionally(ex -> {
-                    ex.printStackTrace();
-                    return internalServerError(views.html.errorPage.render("An error occurred while fetching search results."));
-                });
+        return searchHelper(searchService, keyword, request);
     }
 
 
@@ -160,13 +108,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> channelProfile(String channelId, Http.Request request) {
-        return channelProfileService.getChannelInfo(channelId)
-                .thenCombine(channelProfileService.getChannelVideos(channelId, 10),
-                        (channelInfo, videos) -> addSessionId(request, ok(views.html.channelProfile.render(channelInfo, videos)))
-                ).exceptionally(ex -> {
-                    ex.printStackTrace();
-                    return internalServerError(views.html.errorPage.render("An error occurred while fetching channel profile."));
-                });
+        return ControllerHelper.channelProfileHelper(channelProfileService, channelId, request);
     }
 
     /**
@@ -178,21 +120,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> wordStats(String keyword, Http.Request request) {
-        if (!isKeywordValid(keyword)) {
-            System.out.println("Keyword is not valid");
-            return CompletableFuture.completedFuture(redirect(routes.YoutubeController.index()));
-        }
-
-        String standardizedKeyword = keyword.trim().toLowerCase();
-
-        return searchService.searchVideos(standardizedKeyword, NUM_OF_RESULTS_SENTIMENT)
-                .thenApply(videos -> {
-                    searchService.addSearchResult(getSessionId(request), standardizedKeyword, videos);
-                    return addSessionId(request, ok(views.html.wordStats.render(standardizedKeyword, wordStatService.createWordStats(videos))));
-                }).exceptionally(ex -> {
-                    ex.printStackTrace();
-                    return internalServerError(views.html.errorPage.render("An error occurred while fetching word stats."));
-                });
+        return ControllerHelper.wordStatHelper(searchService, wordStatService, keyword, request);
     }
 
     public WebSocket ws() {
