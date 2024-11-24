@@ -186,5 +186,90 @@ public class YouTubeServiceTest {
         assertNotNull(tags);
         assertTrue(tags.isEmpty());
     }
+
+    @Test
+    public void testParseTagsWithItemsNoTags() {
+        JSONObject snippet = new JSONObject();
+        JSONObject item = new JSONObject().put("snippet", snippet);
+        JSONArray items = new JSONArray().put(item);
+
+        List<String> tags = youTubeService.parseTags(items);
+
+        assertNotNull(tags);
+        assertTrue(tags.isEmpty());
+    }
+
+    @Test
+    public void testParseTagsWithEmptyArray() {
+        JSONArray items = new JSONArray();
+
+        List<String> tags = youTubeService.parseTags(items);
+
+        assertNotNull(tags);
+        assertTrue(tags.isEmpty());
+    }
+
+    @Test
+    public void testParseTagsWithMissingSnippet() {
+        JSONObject item = new JSONObject();
+        JSONArray items = new JSONArray().put(item);
+
+        List<String> tags = youTubeService.parseTags(items);
+
+        assertNotNull(tags);
+        assertTrue(tags.isEmpty());
+    }
+    @Test
+    public void testParseVideoWithIdAsString() {
+        // Prepare mock JSON data with 'id' as a simple string
+        JSONObject snippet = new JSONObject()
+                .put("title", "Video with String ID")
+                .put("description", "Description for video with String ID")
+                .put("channelTitle", "Channel with String ID")
+                .put("thumbnails", new JSONObject().put("default", new JSONObject().put("url", "https://string.id.thumbnail.url")))
+                .put("channelId", "stringChannelId");
+
+        JSONObject item = new JSONObject()
+                .put("id", "stringVideoId")
+                .put("snippet", snippet);
+
+        // Parse video using YouTubeService
+        Video video = youTubeService.parseVideo(item);
+
+        // Verify the parsed video details
+        assertNotNull(video);
+        assertEquals("stringVideoId", video.getVideoId());
+        assertEquals("Video with String ID", video.getTitle());
+        assertEquals("Description for video with String ID", video.getDescription());
+        assertEquals("Channel with String ID", video.getChannelTitle());
+        assertEquals("https://string.id.thumbnail.url", video.getThumbnailUrl());
+    }
+    @Test
+    public void testParseVideoWithNonStringNonObjectId() {
+        // Prepare mock JSON data with 'id' as an integer (unexpected type)
+        JSONObject snippet = new JSONObject()
+                .put("title", "Video with Unexpected ID Type")
+                .put("description", "Description for video with unexpected ID type")
+                .put("channelTitle", "Channel with Unexpected ID Type")
+                .put("thumbnails", new JSONObject().put("default", new JSONObject().put("url", "https://unexpected.id.thumbnail.url")))
+                .put("channelId", "unexpectedChannelId");
+
+        JSONObject item = new JSONObject()
+                .put("id", 12345)  // Integer instead of String or JSONObject
+                .put("snippet", snippet);
+
+        // Parse video using YouTubeService
+        Video video = youTubeService.parseVideo(item);
+
+        // Verify the parsed video details
+        assertNotNull(video);
+        assertNull(video.getVideoId());  // Since 'id' is not a String or JSONObject, videoId should be null
+        assertEquals("Video with Unexpected ID Type", video.getTitle());
+        assertEquals("Description for video with unexpected ID type", video.getDescription());
+        assertEquals("Channel with Unexpected ID Type", video.getChannelTitle());
+        assertEquals("https://unexpected.id.thumbnail.url", video.getThumbnailUrl());
+    }
+
+
 }
 

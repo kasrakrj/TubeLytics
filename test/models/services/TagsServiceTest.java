@@ -35,19 +35,18 @@ public class TagsServiceTest {
      */
     @Before
     public void setUp() {
-        mockTagsService = Mockito.mock(TagsService.class);
         mockYouTubeService = Mockito.mock(YouTubeService.class);
         mockHttpClient = Mockito.mock(HttpClient.class);
         mockResponse = Mockito.mock(HttpResponse.class);
+        mockTagsService = Mockito.mock(TagsService.class);
+
     }
 
     /**
      * Tests the getTagsByVideo method in TagsService, ensuring that it retrieves the
      * correct tags for a given video.
-     * <p>
      * This method mocks the YouTube API response with JSON data containing video tags
      * and verifies that the retrieved tags match the expected list.
-     * </p>
      *
      * @throws Exception if any asynchronous operation fails
      */
@@ -92,10 +91,8 @@ public class TagsServiceTest {
     /**
      * Tests the getVideoByVideoId method in TagsService, verifying that it retrieves the
      * correct video details when given a video ID.
-     * <p>
      * This method mocks the YouTube API JSON response containing video details and validates
      * that the retrieved Video object matches the expected data.
-     * </p>
      *
      * @throws Exception if any asynchronous operation fails
      */
