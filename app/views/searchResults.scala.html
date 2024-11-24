@@ -123,11 +123,7 @@
         color: #444;
     }
 
-    #new-videos-section {
-        width: 80%;
-        max-width: 1000px;
-        margin: 0 auto 20px auto;
-    }
+
 
     #new-videos-section h2 {
         font-size: 1.5em;
@@ -182,15 +178,6 @@
 
 </script>
 
-<!--<h2>Search Results for '@keyword'</h2>-->
-<!--<div class="sentiment">-->
-<!--    Sentiment for '@keyword': @individualSentiments.getOrElse(keyword, "N/A")-->
-<!--</div>-->
-
-<!--<div>-->
-<!--    <a href="@routes.YoutubeController.wordStats(keyword)">Search Stats</a>-->
-<!--</div>-->
-
 <!-- Initial Search Results Section -->
 @for((key, videos) <- searchHistory.asScala.toSeq.reverse) {
 @defining(key.replaceAll("[^a-zA-Z0-9]", "_")) { safeKey =>
@@ -233,7 +220,4 @@
 }
 }
 
-
-<!-- Include the updated JavaScript file -->
-<!--<script src="@routes.Assets.versioned("javascripts/main.js")"></script>-->
 }

@@ -147,6 +147,7 @@ public class YoutubeController extends Controller {
 
         final String finalSessionId = sessionId;
 
+        // TODO: SHOULD BE UPDATED TO SET TO 50 FOR SENTIMENT
         return searchService.searchVideos(standardizedKeyword, NUM_OF_RESULTS_SENTIMENT)
                 .thenCompose(videos -> {
                     // Limit to top 10 videos

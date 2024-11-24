@@ -9,6 +9,8 @@ import java.net.URLEncoder;
 import java.net.http.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -33,6 +35,8 @@ public class SearchService {
     private final SentimentService sentimentService;
     private ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
     private HttpClient httpClient;
+
+    private boolean isTestingMode = false; // Set to 'false' in production
 
     /**
      * Constructs a SearchService instance with the provided SentimentService, YouTubeService, cache, and HttpClient.
@@ -128,18 +132,18 @@ public class SearchService {
      * Fetches new videos for a given keyword by calling the YouTube API.
      * Filters out duplicate videos to ensure fresh content.
      *
-     * @param keyword          The search keyword.
-     * @param numOfResults     The number of results to fetch.
+     * @param keyword           The search keyword.
+     * @param numOfResults      The number of results to fetch.
      * @param processedVideoIds A set of video IDs that have already been sent to the client.
      * @return A list of new Video objects or an empty list if no new videos are found.
      */
     public List<Video> fetchNewVideos(String keyword, int numOfResults, Set<String> processedVideoIds) {
         try {
+            if (isTestingMode) {
+                return generateMockVideos(keyword, 2, processedVideoIds);
+            }
             // Fetch videos asynchronously using SearchService
             List<Video> videos = searchVideos(keyword, numOfResults).toCompletableFuture().join();
-
-            System.out.println("New vids:");
-            System.out.println(videos);
 
             // Filter out duplicates and return new videos
             return videos.stream()
@@ -151,6 +155,30 @@ public class SearchService {
             return Collections.emptyList();
         }
     }
+
+    private List<Video> generateMockVideos(String keyword, int numOfResults, Set<String> processedVideoIds) {
+        List<Video> mockVideos = new ArrayList<>();
+        for (int i = 0; i < numOfResults; i++) {
+            String videoId = UUID.randomUUID().toString();
+            if (processedVideoIds.contains(videoId)) {
+                continue; // Skip if already processed
+            }
+            Video video = new Video();
+            video.setVideoId(videoId);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime dateTime = LocalDateTime.now();
+            String formattedDateTime = dateTime.format(formatter);
+            video.setTitle("Mock Video " + formattedDateTime + " for keyword: " + keyword);
+            video.setDescription("This is a description for mock video Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur." + i);
+            video.setThumbnailUrl("https://picsum.photos/120/80?random=" + UUID.randomUUID().toString());
+            video.setChannelId(UUID.randomUUID().toString());
+            video.setChannelTitle("Mock Channel " + i);
+            mockVideos.add(video);
+            processedVideoIds.add(videoId);
+        }
+        return mockVideos;
+    }
+
 
     /**
      * Checks if a video is new by verifying its ID against the set of processed IDs.

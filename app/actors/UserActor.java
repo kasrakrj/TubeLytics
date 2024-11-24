@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import scala.concurrent.duration.Duration;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +49,7 @@ public class UserActor extends AbstractActor {
     public void preStart() {
         // Schedule periodic updates for search history
         getContext().getSystem().scheduler().scheduleWithFixedDelay(
-                Duration.create(0, TimeUnit.SECONDS),  // Initial delay
+                Duration.create(10, TimeUnit.SECONDS),  // Initial delay
                 Duration.create(30, TimeUnit.SECONDS), // Fetch every 30 seconds
                 self(),
                 "FetchVideos",
@@ -113,6 +114,7 @@ public class UserActor extends AbstractActor {
 
     private void fetchAndSendResults(String keyword) {
         List<Video> newResults = searchService.fetchNewVideos(keyword, 10, processedVideoIds);
+        System.out.println("Getting " + newResults.size() + " videos for keyword: " + keyword + "|New Results at " + LocalDateTime.now());
         for (Video video : newResults) {
             String json = videoToJson(video, keyword);
             out.tell(json, self());
