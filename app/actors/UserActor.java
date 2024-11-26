@@ -113,13 +113,22 @@ public class UserActor extends AbstractActor {
     }
 
     private void fetchAndSendResults(String keyword) {
-        List<Video> newResults = searchService.fetchNewVideos(keyword, 10, processedVideoIds);
-        System.out.println("Getting " + newResults.size() + " videos for keyword: " + keyword + "|New Results at " + LocalDateTime.now());
-        for (Video video : newResults) {
-            String json = videoToJson(video, keyword);
-            out.tell(json, self());
-        }
+        searchService.fetchNewVideos(keyword, 10, processedVideoIds)
+                .thenAccept(newResults -> {
+                    System.out.println("Getting " + newResults.size() + " videos for keyword: " + keyword + " | New Results at " + LocalDateTime.now());
+
+                    for (Video video : newResults) {
+                        String json = videoToJson(video, keyword);
+                        out.tell(json, self());
+                    }
+                })
+                .exceptionally(e -> {
+                    // Handle exceptions gracefully
+                    System.err.println("Error fetching and sending results for keyword '" + keyword + "': " + e.getMessage());
+                    return null; // Return null since exceptionally doesn't propagate the value
+                });
     }
+
 
     private String videoToJson(Video video, String keyword) {
         JSONObject json = new JSONObject();

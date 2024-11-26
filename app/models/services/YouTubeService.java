@@ -95,16 +95,12 @@ public class YouTubeService {
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public List<Video> parseVideos(JSONArray items) {
-        List<Video> videos = new ArrayList<>();
-
-        for (int i = 0; i < items.length(); i++) {
-            JSONObject item = items.getJSONObject(i);
-            Video video = parseVideo(item);
-            videos.add(video);
-        }
-
-        return videos;
+        return IntStream.range(0, items.length())
+                .mapToObj(items::getJSONObject)
+                .map(this::parseVideo)
+                .collect(Collectors.toList());
     }
+
 
     /**
      * Parses a JSONArray to extract tags from the first item in the array using Java Streams.

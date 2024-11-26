@@ -137,24 +137,28 @@ public class SearchService {
      * @param processedVideoIds A set of video IDs that have already been sent to the client.
      * @return A list of new Video objects or an empty list if no new videos are found.
      */
-    public List<Video> fetchNewVideos(String keyword, int numOfResults, Set<String> processedVideoIds) {
-        try {
-            if (isTestingMode) {
-                return generateMockVideos(keyword, 2, processedVideoIds);
-            }
-            // Fetch videos asynchronously using SearchService
-            List<Video> videos = searchVideos(keyword, numOfResults).toCompletableFuture().join();
+    public CompletionStage<List<Video>> fetchNewVideos(
+            String keyword, int numOfResults, Set<String> processedVideoIds) {
 
-            // Filter out duplicates and return new videos
-            return videos.stream()
-                    .filter(video -> isNewVideo(video, processedVideoIds)) // Keep only new videos
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            // Handle errors gracefully (e.g., log the error)
-            System.err.println("Error fetching videos for keyword '" + keyword + "': " + e.getMessage());
-            return Collections.emptyList();
+        if (isTestingMode) {
+            // Return mock videos wrapped in a CompletableFuture
+            return CompletableFuture.completedFuture(generateMockVideos(keyword, 2, processedVideoIds));
         }
+
+        // Fetch videos asynchronously using SearchService
+        return searchVideos(keyword, numOfResults)
+                .thenApply(videos ->
+                        videos.stream()
+                                .filter(video -> isNewVideo(video, processedVideoIds)) // Filter out duplicates
+                                .collect(Collectors.toList())
+                )
+                .exceptionally(e -> {
+                    // Handle errors gracefully
+                    System.err.println("Error fetching videos for keyword '" + keyword + "': " + e.getMessage());
+                    return Collections.emptyList();
+                });
     }
+
 
     private List<Video> generateMockVideos(String keyword, int numOfResults, Set<String> processedVideoIds) {
         List<Video> mockVideos = new ArrayList<>();
