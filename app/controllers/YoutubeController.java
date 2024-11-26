@@ -1,14 +1,15 @@
 package controllers;
 
+import actors.SentimentActor;
 import actors.UserActor;
 import akka.actor.ActorSystem;
+import akka.actor.ActorRef;
 import akka.stream.Materializer;
 import models.services.*;
 import play.libs.streams.ActorFlow;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-
 import play.mvc.WebSocket;
 
 import javax.inject.Inject;
@@ -23,7 +24,7 @@ import static models.services.SessionService.*;
  * with the YouTube API, including searching for videos, viewing tags, generating word statistics,
  * and retrieving channel profiles. It manages session data and handles asynchronous requests.
  *
- * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+ * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
  */
 public class YoutubeController extends Controller {
 
@@ -35,6 +36,9 @@ public class YoutubeController extends Controller {
     private final ActorSystem actorSystem;
     private final Materializer materializer;
 
+    // Actor reference to interact with SentimentActor
+    private final ActorRef sentimentActor;
+
     /**
      * Constructs a YoutubeController with injected dependencies.
      *
@@ -44,7 +48,7 @@ public class YoutubeController extends Controller {
      * @param tagsService           The service for retrieving tags associated with videos.
      * @param actorSystem
      * @param materializer
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     @Inject
     public YoutubeController(SearchService searchService,
@@ -59,6 +63,9 @@ public class YoutubeController extends Controller {
         this.tagsService = tagsService;
         this.actorSystem = actorSystem;
         this.materializer = materializer;
+
+        // Initialize SentimentActor
+        this.sentimentActor = actorSystem.actorOf(SentimentActor.props());
     }
 
     /**
@@ -66,7 +73,7 @@ public class YoutubeController extends Controller {
      *
      * @param request The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the index page.
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> index(Http.Request request) {
         return CompletableFuture.completedFuture(addSessionId(request, ok(views.html.index.render())));
@@ -78,7 +85,7 @@ public class YoutubeController extends Controller {
      * @param videoID The ID of the video for which to retrieve tags.
      * @param request The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the tags page or an error page if an issue occurs.
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> tags(String videoID, Http.Request request) {
         return ControllerHelper.tagHelper(tagsService, videoID, request);
@@ -90,14 +97,11 @@ public class YoutubeController extends Controller {
      * @param keyword The keyword to search for.
      * @param request The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the search results page or an error page if an issue occurs.
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> search(String keyword, Http.Request request) {
         return searchHelper(searchService, keyword, request);
     }
-
-
-
 
     /**
      * Renders the channel profile page for a given channel ID, including channel information and videos.
@@ -105,7 +109,7 @@ public class YoutubeController extends Controller {
      * @param channelId The ID of the YouTube channel.
      * @param request   The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the channel profile page or an error page if an issue occurs.
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> channelProfile(String channelId, Http.Request request) {
         return ControllerHelper.channelProfileHelper(channelProfileService, channelId, request);
@@ -117,7 +121,7 @@ public class YoutubeController extends Controller {
      * @param keyword The keyword for which to generate word statistics.
      * @param request The HTTP request from the client.
      * @return CompletionStage of the Result, rendering the word statistics page or an error page if an issue occurs.
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> wordStats(String keyword, Http.Request request) {
         return ControllerHelper.wordStatHelper(searchService, wordStatService, keyword, request);
@@ -133,7 +137,4 @@ public class YoutubeController extends Controller {
             );
         });
     }
-
-
-
 }
