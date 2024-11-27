@@ -1,9 +1,14 @@
 package models.services;
 
+import actors.ChannelProfileMessages;
+import akka.actor.ActorRef;
+import akka.pattern.Patterns;
 import models.entities.Video;
+import org.json.JSONObject;
 import play.mvc.Http;
 import play.mvc.Result;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -35,15 +40,36 @@ public class ControllerHelper {
                 });
     }
 
-    public static CompletionStage<Result> channelProfileHelper(ChannelProfileService channelProfileService, String channelId, Http.Request request){
-        return channelProfileService.getChannelInfo(channelId)
-                .thenCombine(channelProfileService.getChannelVideos(channelId, 10),
-                        (channelInfo, videos) -> addSessionId(request, ok(views.html.channelProfile.render(channelInfo, videos)))
-                ).exceptionally(ex -> {
-                    ex.printStackTrace();
-                    return internalServerError(views.html.errorPage.render("An error occurred while fetching channel profile."));
-                });
+    public static CompletionStage<Result> channelProfileHelper(ActorRef channelProfileActor, String channelId, Http.Request request){
+        // Ask the actor for channel info
+        CompletionStage<Object> channelInfoFuture = Patterns.ask(
+                channelProfileActor,
+                new ChannelProfileMessages.GetChannelInfo(channelId),
+                Duration.ofSeconds(5)
+        );
+
+        // Ask the actor for channel videos
+        CompletionStage<Object> channelVideosFuture = Patterns.ask(
+                channelProfileActor,
+                new ChannelProfileMessages.GetChannelVideos(channelId, 10),
+                Duration.ofSeconds(5)
+        );
+
+        // Combine both futures
+        return channelInfoFuture.thenCombine(channelVideosFuture, (infoResponse, videosResponse) -> {
+            if (infoResponse instanceof ChannelProfileMessages.ChannelProfileError || videosResponse instanceof ChannelProfileMessages.ChannelProfileError) {
+                return internalServerError(views.html.errorPage.render("An error occurred while fetching channel profile."));
+            }
+
+            JSONObject channelInfo = ((ChannelProfileMessages.ChannelInfoResponse) infoResponse).getChannelInfo();
+            List<Video> videos = ((ChannelProfileMessages.ChannelVideosResponse) videosResponse).getVideos();
+            return addSessionId(request, ok(views.html.channelProfile.render(channelInfo, videos)));
+        }).exceptionally(ex -> {
+            ex.printStackTrace();
+            return internalServerError(views.html.errorPage.render("An error occurred while fetching channel profile."));
+        });
     }
+
 
     public static CompletionStage<Result> wordStatHelper(SearchService searchService, WordStatService wordStatService, String keyword, Http.Request request){
         if (!isKeywordValid(keyword)) {

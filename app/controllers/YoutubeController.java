@@ -1,11 +1,13 @@
 package controllers;
 
+import actors.ChannelProfileActor;
 import actors.SentimentActor;
 import actors.UserActor;
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
 import akka.stream.Materializer;
 import models.services.*;
+import play.libs.concurrent.HttpExecutionContext;
 import play.libs.streams.ActorFlow;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -38,6 +40,9 @@ public class YoutubeController extends Controller {
 
     // Actor reference to interact with SentimentActor
     private final ActorRef sentimentActor;
+    private final ActorRef channelProfileActor;
+
+    private final YouTubeService youTubeService;
 
     /**
      * Constructs a YoutubeController with injected dependencies.
@@ -48,6 +53,8 @@ public class YoutubeController extends Controller {
      * @param tagsService           The service for retrieving tags associated with videos.
      * @param actorSystem
      * @param materializer
+     * @param channelProfileActor
+     * @param youTubeService
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     @Inject
@@ -56,16 +63,21 @@ public class YoutubeController extends Controller {
                              ChannelProfileService channelProfileService,
                              TagsService tagsService,
                              ActorSystem actorSystem,
-                             Materializer materializer) {
+                             Materializer materializer,
+                             YouTubeService youTubeService,
+                             SentimentService sentimentService,
+                             HttpExecutionContext httpExecutionContext) {
         this.searchService = searchService;
         this.wordStatService = wordStatService;
         this.channelProfileService = channelProfileService;
         this.tagsService = tagsService;
         this.actorSystem = actorSystem;
         this.materializer = materializer;
+        this.youTubeService = youTubeService;
 
         // Initialize SentimentActor
-        this.sentimentActor = actorSystem.actorOf(SentimentActor.props());
+        this.sentimentActor = actorSystem.actorOf(SentimentActor.props(sentimentService, httpExecutionContext));
+        this.channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(this.youTubeService), "channelProfileActor");
     }
 
     /**
@@ -112,7 +124,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> channelProfile(String channelId, Http.Request request) {
-        return ControllerHelper.channelProfileHelper(channelProfileService, channelId, request);
+        return ControllerHelper.channelProfileHelper(channelProfileActor, channelId, request);
     }
 
     /**

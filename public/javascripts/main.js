@@ -69,9 +69,9 @@ socket.addEventListener("message", (event) => {
                     <p>${videoData.description}</p>
                     <small>
                         Channel:
-                        <a href="/channelProfile/${videoData.channelId}">${videoData.channelTitle}</a>
+                        <a href="/channel/${videoData.channelId}" target="_blank">${videoData.channelTitle}</a>
                     </small>
-                    <p><a href="/tags/${videoData.videoId}">Tags</a></p>
+                    <p><a href="/tags/${videoData.videoId}" target="_blank">Tags</a></p>
                 </div>
             `;
 

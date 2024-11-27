@@ -1,6 +1,5 @@
 package controllers;
 
-import akka.actor.Actor;
 import models.entities.Video;
 import models.services.*;
 import org.json.JSONObject;
@@ -37,7 +36,7 @@ public class YoutubeControllerTest {
         mockChannelProfileService = mock(ChannelProfileService.class);
         mockTagsService = mock(TagsService.class);
         youtubeController = new YoutubeController(
-                mockSearchService, mockWordStatService, mockChannelProfileService, mockTagsService, actorSystem, materializer);
+                mockSearchService, mockWordStatService, mockChannelProfileService, mockTagsService, actorSystem, materializer, channelProfileActor, youTubeService);
     }
 
     @Test

@@ -187,7 +187,7 @@
 </div>
 
 <div>
-    <a href="@routes.YoutubeController.wordStats(key)">Search Stats</a>
+    <a href="@routes.YoutubeController.wordStats(key)" target="_blank">Search Stats</a>
 </div>
 
 <!-- New Videos Section for this keyword -->
@@ -209,9 +209,9 @@
             <p>@video.getDescription()</p>
             <small>
                 Channel:
-                <a href="@routes.YoutubeController.channelProfile(video.getChannelId())">@video.getChannelTitle()</a>
+                <a href="@routes.YoutubeController.channelProfile(video.getChannelId())" target="_blank">@video.getChannelTitle()</a>
             </small>
-            <p><a href="@routes.YoutubeController.tags(video.getVideoId())">Tags</a></p>
+            <p><a href="@routes.YoutubeController.tags(video.getVideoId())" target="_blank">Tags</a></p>
         </div>
     </li>
     }
