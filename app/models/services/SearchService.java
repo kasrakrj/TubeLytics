@@ -9,6 +9,10 @@ import java.net.URLEncoder;
 import java.net.http.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -20,6 +24,7 @@ import java.util.stream.Collectors;
  * The SearchService class provides methods to search for videos on YouTube, manage search history,
  * and perform sentiment analysis on search results. It leverages YouTubeService to interact with the YouTube API
  * and SentimentService to analyze the sentiment of video descriptions.
+ *
  * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  */
 public class SearchService {
@@ -29,33 +34,11 @@ public class SearchService {
     private final String YOUTUBE_SEARCH_URL;
     private static final int MAX_SEARCH_HISTORY = 10;
     private final Map<String, LinkedHashMap<String, List<Video>>> sessionSearchHistoryMap = new ConcurrentHashMap<>();
-
-    public String getAPI_KEY() {
-        return API_KEY;
-    }
-
-    public String getAPI_URL() {
-        return API_URL;
-    }
-
-    public String getYOUTUBE_SEARCH_URL() {
-        return YOUTUBE_SEARCH_URL;
-    }
-
-    public HttpClient getHttpClient() {
-        return httpClient;
-    }
-
     private final SentimentService sentimentService;
-
-    // In-memory cache for storing search results
     private ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
+    private HttpClient httpClient;
 
-    public ConcurrentMap<String, List<Video>> getCache() {
-        return cache;
-    }
-
-    private  HttpClient httpClient ;
+    private boolean isTestingMode = true; // Set to 'false' in production
 
     /**
      * Constructs a SearchService instance with the provided SentimentService, YouTubeService, cache, and HttpClient.
@@ -74,18 +57,38 @@ public class SearchService {
         this.API_URL = youTubeService.getApiUrl();
         this.YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
         this.cache = cache;
-        this.httpClient=HttpClient.newHttpClient();
+        this.httpClient = HttpClient.newHttpClient();
     }
 
 
-    public SearchService(SentimentService sentimentService, YouTubeService youTubeService, ConcurrentHashMap<String, List<Video>> cache,HttpClient httpClient ) {
+    public SearchService(SentimentService sentimentService, YouTubeService youTubeService, ConcurrentHashMap<String, List<Video>> cache, HttpClient httpClient) {
         this.sentimentService = sentimentService;
         this.youTubeService = youTubeService;
         this.API_KEY = youTubeService.getApiKey();
         this.API_URL = youTubeService.getApiUrl();
         this.YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
         this.cache = cache;
-        this.httpClient=httpClient;
+        this.httpClient = httpClient;
+    }
+
+    public String getAPI_KEY() {
+        return API_KEY;
+    }
+
+    public String getAPI_URL() {
+        return API_URL;
+    }
+
+    public String getYOUTUBE_SEARCH_URL() {
+        return YOUTUBE_SEARCH_URL;
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
+    }
+
+    public ConcurrentMap<String, List<Video>> getCache() {
+        return cache;
     }
 
     /**
@@ -128,11 +131,105 @@ public class SearchService {
     }
 
     /**
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
-     * Retrieves the search history for a specific session, limited to the 10 most recent searches.
+     * Fetches new videos for a given keyword by calling the YouTube API.
+     * Filters out duplicate videos to ensure fresh content.
      *
+     * @param keyword           The search keyword.
+     * @param numOfResults      The number of results to fetch.
+     * @param processedVideoIds A set of video IDs that have already been sent to the client.
+     * @return A list of new Video objects or an empty list if no new videos are found.
+     */
+    public CompletionStage<List<Video>> fetchNewVideos(
+            String keyword, int numOfResults, Set<String> processedVideoIds) {
+
+        if (isTestingMode) {
+            // Return mock videos wrapped in a CompletableFuture
+            return CompletableFuture.completedFuture(generateMockVideos(keyword, 2, processedVideoIds));
+        }
+
+        // Fetch videos asynchronously using SearchService
+        return searchVideos(keyword, numOfResults)
+                .thenApply(videos ->
+                        videos.stream()
+                                .filter(video -> isNewVideo(video, processedVideoIds)) // Filter out duplicates
+                                .collect(Collectors.toList())
+                )
+                .exceptionally(e -> {
+                    // Handle errors gracefully
+                    System.err.println("Error fetching videos for keyword '" + keyword + "': " + e.getMessage());
+                    return Collections.emptyList();
+                });
+    }
+
+    /**
+     * Updates all session search histories with new videos for the given keyword.
+     * If any session contains the keyword, the new videos are added to the respective session's keyword list.
+     * Ensures the total videos for each keyword do not exceed 10.
+     *
+     * @param keyword   The search keyword for which new videos are added.
+     * @param newVideos The new videos to add for the keyword.
+     */
+    public void updateVideosForKeywordAcrossSessions(String keyword, List<Video> newVideos) {
+        sessionSearchHistoryMap.forEach((sessionId, searchHistory) -> {
+            synchronized (searchHistory) {
+                List<Video> existingVideos = searchHistory.getOrDefault(keyword, new ArrayList<>());
+                existingVideos.addAll(newVideos);
+
+                // Remove oldest videos to keep the size within MAX_SEARCH_HISTORY
+                if (existingVideos.size() > MAX_SEARCH_HISTORY) {
+                    int videosToRemove = existingVideos.size() - MAX_SEARCH_HISTORY;
+                    existingVideos = existingVideos.subList(videosToRemove, existingVideos.size());
+                }
+
+                searchHistory.put(keyword, existingVideos);
+            }
+        });
+    }
+
+
+
+    private List<Video> generateMockVideos(String keyword, int numOfResults, Set<String> processedVideoIds) {
+        List<Video> mockVideos = new ArrayList<>();
+        for (int i = 0; i < numOfResults; i++) {
+            String videoId = UUID.randomUUID().toString();
+            if (processedVideoIds.contains(videoId)) {
+                continue; // Skip if already processed
+            }
+            Video video = new Video();
+            video.setVideoId(videoId);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime dateTime = LocalDateTime.now();
+            String formattedDateTime = dateTime.format(formatter);
+            video.setTitle("Mock Video " + formattedDateTime + " for keyword: " + keyword);
+            video.setDescription("This is a description for mock video Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur." + i);
+            video.setThumbnailUrl("https://picsum.photos/120/80?random=" + UUID.randomUUID().toString());
+            video.setChannelId(UUID.randomUUID().toString());
+            video.setChannelTitle("Mock Channel " + i);
+            video.setPublishedAt(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
+            mockVideos.add(video);
+            processedVideoIds.add(videoId);
+        }
+        return mockVideos;
+    }
+
+
+    /**
+     * Checks if a video is new by verifying its ID against the set of processed IDs.
+     * If the video is new, its ID is added to the processed set.
+     *
+     * @param video             The video to check.
+     * @param processedVideoIds The set of already processed video IDs.
+     * @return True if the video is new; false otherwise.
+     */
+    private boolean isNewVideo(Video video, Set<String> processedVideoIds) {
+        return processedVideoIds.add(video.getVideoId());
+    }
+
+    /**
      * @param sessionId The session ID for retrieving the search history.
      * @return A map of keywords and lists of videos representing the search history.
+     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
+     * Retrieves the search history for a specific session, limited to the 10 most recent searches.
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public Map<String, List<Video>> getSearchHistory(String sessionId) {
@@ -235,7 +332,6 @@ public class SearchService {
             searchHistory.remove(oldestKey);
         }
     }
-
 
 
     /**

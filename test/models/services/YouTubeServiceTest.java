@@ -23,7 +23,7 @@ public class YouTubeServiceTest {
      */
     @Before
     public void setUp() {
-        youTubeService = new YouTubeService();
+        youTubeService = new YouTubeService(searchService);
     }
 
     /**

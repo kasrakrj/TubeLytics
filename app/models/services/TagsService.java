@@ -4,6 +4,7 @@ import models.entities.Video;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import javax.inject.Inject;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -16,7 +17,13 @@ import java.util.concurrent.CompletionStage;
  * It utilizes YouTubeService to interact with the API and parse the responses.
  */
 public class TagsService {
-    private final YouTubeService youTubeService = new YouTubeService();
+    private final YouTubeService youTubeService;
+
+
+    @Inject
+    public TagsService(YouTubeService youTubeService) {
+        this.youTubeService = youTubeService;
+    }
 
     /**
      * Retrieves the tags associated with a specific video by making an asynchronous request to the YouTube Data API.
