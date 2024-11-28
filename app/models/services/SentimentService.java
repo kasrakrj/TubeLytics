@@ -91,6 +91,16 @@ public class SentimentService {
     }
 
     /**
+     * Analyze sentiment asynchronously for a video description.
+     *
+     * @param description the text description of a video
+     * @return a CompletionStage<String> representing the sentiment of the video
+     */
+    public CompletionStage<String> analyzeAsync(String description) {
+        return CompletableFuture.supplyAsync(() -> calculateSentiment(description));
+    }
+
+    /**
      * Calculate the average sentiment for a list of video descriptions asynchronously.
      *
      * @param videos the list of videos for which to analyze overall sentiment
@@ -152,5 +162,4 @@ public class SentimentService {
 
         return result;
     }
-
 }

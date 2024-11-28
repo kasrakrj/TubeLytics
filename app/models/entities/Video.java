@@ -1,5 +1,7 @@
 package models.entities;
 
+import java.util.Objects;
+
 /**
  * Represents a YouTube video with associated metadata.
  * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
@@ -12,6 +14,8 @@ public class Video {
     private String videoId;
     private String channelId;
     private String VideoURL;
+
+    private String publishedAt;
 
     /**
      * Default constructor.
@@ -32,7 +36,8 @@ public class Video {
      * @param videoURL      the URL of the video
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
-    public Video(String title, String description, String channelTitle, String thumbnailUrl, String videoId, String channelId, String videoURL) {
+    public Video(String title, String description, String channelTitle, String thumbnailUrl, String videoId,
+                 String channelId, String videoURL, String publishedAt) {
         this.title = title;
         this.description = description;
         this.channelTitle = channelTitle;
@@ -40,6 +45,7 @@ public class Video {
         this.videoId = videoId;
         this.channelId = channelId;
         this.VideoURL = videoURL;
+        this.publishedAt = publishedAt;
     }
 
     /**
@@ -180,5 +186,40 @@ public class Video {
      */
     public void setVideoURL(String videoURL) {
         VideoURL = videoURL;
+    }
+
+    public String getPublishedAt() {
+        return publishedAt;
+    }
+
+    public void setPublishedAt(String publishedAt) {
+        this.publishedAt = publishedAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Video video = (Video) o;
+        return videoId.equals(video.videoId) && channelId.equals(video.channelId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(videoId, channelId);
+    }
+
+    @Override
+    public String toString() {
+        return "Video{" +
+                "title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", channelTitle='" + channelTitle + '\'' +
+                ", thumbnailUrl='" + thumbnailUrl + '\'' +
+                ", videoId='" + videoId + '\'' +
+                ", channelId='" + channelId + '\'' +
+                ", VideoURL='" + VideoURL + '\'' +
+                ", publishedAt='" + publishedAt + '\'' +
+                '}';
     }
 }

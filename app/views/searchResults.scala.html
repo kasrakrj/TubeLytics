@@ -10,8 +10,9 @@
 * - Allows users to see an overview of relevant videos and their sentiment alignment.
 *@
 
-
-@(searchHistory: Map[String, List[entities.Video]], overallSentiment: String, individualSentiments: Map[String, String])
+@import java.util.Collections
+@import scala.jdk.CollectionConverters._
+@(searchHistory: java.util.Map[String, java.util.List[entities.Video]], overallSentiment: String, individualSentiments: Map[String, String], keyword: String)
 
 @main("YT Lytics") {
 <style>
@@ -122,40 +123,94 @@
         color: #444;
     }
 
+
+
+    #new-videos-section h2 {
+        font-size: 1.5em;
+        color: #d32f2f;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    #separator {
+        width: 80%;
+        max-width: 1000px;
+        margin: 20px auto;
+        border-bottom: 2px solid #ccc;
+    }
+
+    /* Adjust existing ul styling */
+    ul.video-list {
+        list-style-type: none;
+        padding: 0;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    #new-videos-section .video-item {
+        background-color: #e3f2fd; /* Light blue background for new videos */
+    }
+
+    #new-videos-section h2 {
+        color: #1976d2; /* Darker blue color for the header */
+    }
+
+    .new-video-item {
+        background-color: #e3f2fd; /* Light blue background */
+    }
+
+
+
+
 </style>
 
-<h1>YT Lytics - SearchResult Results</h1>
+<h1>YT Lytics - Search Results</h1>
+<div id="status">Connecting to WebSocket...</div>
 <form action="/search" method="GET">
     <input type="text" name="keyword" placeholder="Enter search keywords">
-    <button type="submit">SearchResult</button>
+    <button type="submit">Search</button>
 </form>
 
-@for((keyword, videos) <- searchHistory.toSeq.reverse) {
-<h2>Search Results for '@keyword'</h2>
+<script type="text/javascript">
+        var searchKeywords = @Html(play.libs.Json.stringify(play.libs.Json.toJson(searchHistory.keySet().asScala)));
+
+
+
+</script>
+
+@for((key, videos) <- searchHistory.asScala.toSeq.reverse) {
+@defining(key.replaceAll("[^a-zA-Z0-9]", "_")) { safeKey =>
+<h2>Search Results for '@key'</h2>
 <div class="sentiment">
-    Sentiment for '@keyword': @individualSentiments(keyword)
+    Sentiment for '@key': @individualSentiments.getOrElse(key, "N/A")
 </div>
 
 <div>
-    <a href="@routes.YoutubeController.wordStats(keyword)"> Search Stats </a>
+    <a href="@routes.YoutubeController.wordStats(key)" target="_blank">Search Stats</a>
 </div>
 
-<ul>
-    @for(video <- videos.take(10)) {  <!-- This will limit the display to 10 -->
-    <li>
+<!-- Combined Videos Section for this keyword -->
+<ul class="video-list" id="video-list-@safeKey">
+    @for(video <- videos.asScala) {
+    <li class="video-item">
         <img src="@video.getThumbnailUrl()" alt="Thumbnail">
         <div>
-            <h3><a href="https://www.youtube.com/watch?v=@video.getVideoId" target="_blank">@video.getTitle</a></h3>
-            <p>@video.getDescription</p>
-
-            <!-- Link to channel profile page using channel ID -->
-            <small>Channel: <a href="@routes.YoutubeController.channelProfile(video.getChannelId)">@video.getChannelTitle</a></small>
-            <p><a href="@routes.YoutubeController.tags(video.getVideoId)">Tags</a></p>
-
+            <h3>
+                <a href="https://www.youtube.com/watch?v=@video.getVideoId()" target="_blank">@video.getTitle()</a>
+            </h3>
+            <p>@video.getDescription()</p>
+            <small>
+                Channel:
+                <a href="@routes.YoutubeController.channelProfile(video.getChannelId())" target="_blank">@video.getChannelTitle()</a>
+            </small>
+            <p><a href="@routes.YoutubeController.tags(video.getVideoId())" target="_blank">Tags</a></p>
         </div>
     </li>
     }
+    <!-- New videos will be appended here via JavaScript -->
 </ul>
+<hr/>
+}
 }
 
 }

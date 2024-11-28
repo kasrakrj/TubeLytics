@@ -6,8 +6,15 @@ import models.entities.Video;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import javax.inject.Inject;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -15,6 +22,7 @@ import java.util.stream.IntStream;
  * The YouTubeService class provides utility methods to interact with the YouTube Data API,
  * parse video details, and extract metadata such as tags. It relies on configuration values
  * for API key and URL, which are loaded from an external configuration file.
+ *
  * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
  */
 public class YouTubeService {
@@ -22,13 +30,6 @@ public class YouTubeService {
     private static final String API_KEY = config.getString("youtube.api.key");
     private static final String API_URL = config.getString("youtube.api.url");
     private static final String BASE_VIDEO_URL = "https://www.youtube.com/watch?v=";
-
-    /**
-     * Constructs a YouTubeService instance and loads the necessary API configuration.
-     * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
-     */
-    public YouTubeService() {
-    }
 
     /**
      * Retrieves the YouTube API key from the configuration.
@@ -72,6 +73,8 @@ public class YouTubeService {
         String thumbnailUrl = snippet.optJSONObject("thumbnails")
                 .optJSONObject("default")
                 .optString("url", "");
+        String publishedAt = snippet.optString("publishedAt",
+                ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
 
         // Handle different types of 'id' structures
         String videoId = null;
@@ -86,7 +89,7 @@ public class YouTubeService {
         String videoUrl = BASE_VIDEO_URL + videoId;
 
         // Create and return the Video object
-        return new Video(title, description, channelTitle, thumbnailUrl, videoId, channelId, videoUrl);
+        return new Video(title, description, channelTitle, thumbnailUrl, videoId, channelId, videoUrl, publishedAt);
     }
 
     /**
@@ -97,16 +100,12 @@ public class YouTubeService {
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
     public List<Video> parseVideos(JSONArray items) {
-        List<Video> videos = new ArrayList<>();
-
-        for (int i = 0; i < items.length(); i++) {
-            JSONObject item = items.getJSONObject(i);
-            Video video = parseVideo(item);
-            videos.add(video);
-        }
-
-        return videos;
+        return IntStream.range(0, items.length())
+                .mapToObj(items::getJSONObject)
+                .map(this::parseVideo)
+                .collect(Collectors.toList());
     }
+
 
     /**
      * Parses a JSONArray to extract tags from the first item in the array using Java Streams.

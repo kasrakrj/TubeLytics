@@ -35,9 +35,8 @@ public class YoutubeControllerTest {
         mockWordStatService = mock(WordStatService.class);
         mockChannelProfileService = mock(ChannelProfileService.class);
         mockTagsService = mock(TagsService.class);
-
         youtubeController = new YoutubeController(
-                mockSearchService, mockWordStatService, mockChannelProfileService, mockTagsService);
+                mockSearchService, mockWordStatService, mockChannelProfileService, mockTagsService, actorSystem, materializer, channelProfileActor, youTubeService);
     }
 
     @Test
@@ -87,8 +86,8 @@ public class YoutubeControllerTest {
         when(mockSearchService.searchVideos(anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(videos));
 
         Map<String, String> individualSentiments = Map.of("keyword", "positive");
-        when(mockSearchService.calculateIndividualSentiments(anyString())).thenReturn(CompletableFuture.completedFuture(individualSentiments));
-        when(mockSearchService.calculateOverallSentiment(anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture("positive"));
+        when(mockSearchService.calculateSentiments(anyString())).thenReturn(CompletableFuture.completedFuture(individualSentiments));
+        //when(mockSearchService.calculateSentiment(anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture("positive"));
 
         // Mocking searchService.getSearchHistory to return some history
         when(mockSearchService.getSearchHistory("existingSessionId")).thenReturn(Collections.emptyMap());
@@ -226,11 +225,8 @@ public class YoutubeControllerTest {
         doNothing().when(mockSearchService).addSearchResultToHistory(anyString(), anyString(), anyList());
 
         // Mock sentiment calculations
-        when(mockSearchService.calculateOverallSentiment(anyString(), eq(50))) // 50 is NUM_OF_RESULTS_SENTIMENT
-                .thenReturn(CompletableFuture.completedFuture("neutral"));
-
         Map<String, String> individualSentiments = Map.of("video1", "positive", "video2", "negative");
-        when(mockSearchService.calculateIndividualSentiments(anyString()))
+        when(mockSearchService.calculateSentiments(anyString()))
                 .thenReturn(CompletableFuture.completedFuture(individualSentiments));
 
         // Mock getting search history to return empty map
@@ -254,7 +250,7 @@ public class YoutubeControllerTest {
         verify(mockSearchService).addSearchResultToHistory(eq(newSessionId), eq(searchKeyword.toLowerCase()), eq(videos));
 
         // Verify that sentiment calculations were called with the new sessionId
-        verify(mockSearchService).calculateOverallSentiment(eq(newSessionId), eq(50));
-        verify(mockSearchService).calculateIndividualSentiments(eq(newSessionId));
+        //verify(mockSearchService).calculateOverallSentiment(eq(newSessionId), eq(50));
+        verify(mockSearchService).calculateSentiments(eq(newSessionId));
     }
 }
