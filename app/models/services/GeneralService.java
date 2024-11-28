@@ -7,6 +7,7 @@ import models.entities.Video;
 import org.json.JSONObject;
 import play.mvc.Http;
 import play.mvc.Result;
+import utils.VideoSorter;
 
 import java.time.Duration;
 import java.util.List;
@@ -19,7 +20,7 @@ import static models.services.SessionService.addSessionId;
 import static models.services.SessionService.getSessionId;
 import static play.mvc.Results.*;
 
-public class ControllerHelper {
+public class GeneralService {
 
     public static final int DEFAULT_NUM_OF_RESULTS = 10;
     public static final int NUM_OF_RESULTS_SENTIMENT = 50;

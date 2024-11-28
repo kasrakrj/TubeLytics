@@ -18,7 +18,7 @@ import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static models.services.ControllerHelper.searchHelper;
+import static models.services.GeneralService.searchHelper;
 import static models.services.SessionService.*;
 
 /**
@@ -53,7 +53,6 @@ public class YoutubeController extends Controller {
      * @param tagsService           The service for retrieving tags associated with videos.
      * @param actorSystem
      * @param materializer
-     * @param channelProfileActor
      * @param youTubeService
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
@@ -100,7 +99,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> tags(String videoID, Http.Request request) {
-        return ControllerHelper.tagHelper(tagsService, videoID, request);
+        return GeneralService.tagHelper(tagsService, videoID, request);
     }
 
     /**
@@ -124,7 +123,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> channelProfile(String channelId, Http.Request request) {
-        return ControllerHelper.channelProfileHelper(channelProfileActor, channelId, request);
+        return GeneralService.channelProfileHelper(channelProfileActor, channelId, request);
     }
 
     /**
@@ -136,7 +135,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> wordStats(String keyword, Http.Request request) {
-        return ControllerHelper.wordStatHelper(searchService, wordStatService, keyword, request);
+        return GeneralService.wordStatHelper(searchService, wordStatService, keyword, request);
     }
 
     public WebSocket ws() {

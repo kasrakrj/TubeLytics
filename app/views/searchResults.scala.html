@@ -178,7 +178,6 @@
 
 </script>
 
-<!-- Initial Search Results Section -->
 @for((key, videos) <- searchHistory.asScala.toSeq.reverse) {
 @defining(key.replaceAll("[^a-zA-Z0-9]", "_")) { safeKey =>
 <h2>Search Results for '@key'</h2>
@@ -190,15 +189,8 @@
     <a href="@routes.YoutubeController.wordStats(key)" target="_blank">Search Stats</a>
 </div>
 
-<!-- New Videos Section for this keyword -->
-<div class="new-videos-section" id="new-videos-section-@safeKey">
-    <!--    <h3>New Videos for '@key'</h3>-->
-    <ul class="new-video-list" id="new-video-list-@safeKey">
-        <!-- New videos will be appended here via JavaScript -->
-    </ul>
-</div>
-
-<ul class="video-list">
+<!-- Combined Videos Section for this keyword -->
+<ul class="video-list" id="video-list-@safeKey">
     @for(video <- videos.asScala) {
     <li class="video-item">
         <img src="@video.getThumbnailUrl()" alt="Thumbnail">
@@ -215,6 +207,7 @@
         </div>
     </li>
     }
+    <!-- New videos will be appended here via JavaScript -->
 </ul>
 <hr/>
 }

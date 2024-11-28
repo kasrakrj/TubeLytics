@@ -7,6 +7,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.inject.Inject;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -70,6 +73,8 @@ public class YouTubeService {
         String thumbnailUrl = snippet.optJSONObject("thumbnails")
                 .optJSONObject("default")
                 .optString("url", "");
+        String publishedAt = snippet.optString("publishedAt",
+                ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
 
         // Handle different types of 'id' structures
         String videoId = null;
@@ -84,7 +89,7 @@ public class YouTubeService {
         String videoUrl = BASE_VIDEO_URL + videoId;
 
         // Create and return the Video object
-        return new Video(title, description, channelTitle, thumbnailUrl, videoId, channelId, videoUrl);
+        return new Video(title, description, channelTitle, thumbnailUrl, videoId, channelId, videoUrl, publishedAt);
     }
 
     /**

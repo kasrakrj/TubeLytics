@@ -10,6 +10,8 @@ import java.net.http.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -36,7 +38,7 @@ public class SearchService {
     private ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
     private HttpClient httpClient;
 
-    private boolean isTestingMode = false; // Set to 'false' in production
+    private boolean isTestingMode = true; // Set to 'false' in production
 
     /**
      * Constructs a SearchService instance with the provided SentimentService, YouTubeService, cache, and HttpClient.
@@ -159,6 +161,32 @@ public class SearchService {
                 });
     }
 
+    /**
+     * Updates all session search histories with new videos for the given keyword.
+     * If any session contains the keyword, the new videos are added to the respective session's keyword list.
+     * Ensures the total videos for each keyword do not exceed 10.
+     *
+     * @param keyword   The search keyword for which new videos are added.
+     * @param newVideos The new videos to add for the keyword.
+     */
+    public void updateVideosForKeywordAcrossSessions(String keyword, List<Video> newVideos) {
+        sessionSearchHistoryMap.forEach((sessionId, searchHistory) -> {
+            synchronized (searchHistory) {
+                List<Video> existingVideos = searchHistory.getOrDefault(keyword, new ArrayList<>());
+                existingVideos.addAll(newVideos);
+
+                // Remove oldest videos to keep the size within MAX_SEARCH_HISTORY
+                if (existingVideos.size() > MAX_SEARCH_HISTORY) {
+                    int videosToRemove = existingVideos.size() - MAX_SEARCH_HISTORY;
+                    existingVideos = existingVideos.subList(videosToRemove, existingVideos.size());
+                }
+
+                searchHistory.put(keyword, existingVideos);
+            }
+        });
+    }
+
+
 
     private List<Video> generateMockVideos(String keyword, int numOfResults, Set<String> processedVideoIds) {
         List<Video> mockVideos = new ArrayList<>();
@@ -177,6 +205,7 @@ public class SearchService {
             video.setThumbnailUrl("https://picsum.photos/120/80?random=" + UUID.randomUUID().toString());
             video.setChannelId(UUID.randomUUID().toString());
             video.setChannelTitle("Mock Channel " + i);
+            video.setPublishedAt(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
             mockVideos.add(video);
             processedVideoIds.add(videoId);
         }

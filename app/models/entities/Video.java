@@ -15,6 +15,8 @@ public class Video {
     private String channelId;
     private String VideoURL;
 
+    private String publishedAt;
+
     /**
      * Default constructor.
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
@@ -34,7 +36,8 @@ public class Video {
      * @param videoURL      the URL of the video
      * @author: Zahra Rasoulifar, Hosna Habibi,Mojtaba Peyrovian, Kasra Karaji
      */
-    public Video(String title, String description, String channelTitle, String thumbnailUrl, String videoId, String channelId, String videoURL) {
+    public Video(String title, String description, String channelTitle, String thumbnailUrl, String videoId,
+                 String channelId, String videoURL, String publishedAt) {
         this.title = title;
         this.description = description;
         this.channelTitle = channelTitle;
@@ -42,6 +45,7 @@ public class Video {
         this.videoId = videoId;
         this.channelId = channelId;
         this.VideoURL = videoURL;
+        this.publishedAt = publishedAt;
     }
 
     /**
@@ -184,6 +188,14 @@ public class Video {
         VideoURL = videoURL;
     }
 
+    public String getPublishedAt() {
+        return publishedAt;
+    }
+
+    public void setPublishedAt(String publishedAt) {
+        this.publishedAt = publishedAt;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -207,6 +219,7 @@ public class Video {
                 ", videoId='" + videoId + '\'' +
                 ", channelId='" + channelId + '\'' +
                 ", VideoURL='" + VideoURL + '\'' +
+                ", publishedAt='" + publishedAt + '\'' +
                 '}';
     }
 }

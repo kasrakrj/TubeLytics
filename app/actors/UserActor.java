@@ -117,6 +117,12 @@ public class UserActor extends AbstractActor {
                 .thenAccept(newResults -> {
                     System.out.println("Getting " + newResults.size() + " videos for keyword: " + keyword + " | New Results at " + LocalDateTime.now());
 
+                    // Update all sessions with the new videos for the keyword
+                    if (!newResults.isEmpty()) {
+                        searchService.updateVideosForKeywordAcrossSessions(keyword, newResults);
+                    }
+
+                    // Send the new results to the client
                     for (Video video : newResults) {
                         String json = videoToJson(video, keyword);
                         out.tell(json, self());

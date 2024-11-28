@@ -45,20 +45,17 @@ socket.addEventListener("message", (event) => {
         // Handle video data
         const videoData = data;
 
-        // Get the keyword from the data
-        const keyword = videoData.keyword;
-
-        // Generate the id of the corresponding new-video-list
-        const safeKeyword = keyword.replace(/[^a-zA-Z0-9]/g, '_');
-        const listId = 'new-video-list-' + safeKeyword;
+        // Generate the id of the corresponding video-list
+        const safeKeyword = videoData.keyword.replace(/[^a-zA-Z0-9]/g, '_');
+        const listId = 'video-list-' + safeKeyword;
 
         // Find the corresponding list element
-        const newVideoListElement = document.getElementById(listId);
+        const videoListElement = document.getElementById(listId);
 
-        if (newVideoListElement) {
+        if (videoListElement) {
             // Create a new list item for the incoming video
             const videoItem = document.createElement("li");
-            videoItem.className = "video-item new-video-item"; // Add the new class here
+            videoItem.className = "video-item new-video-item"; // Add the new class here if needed
 
             videoItem.innerHTML = `
                 <img src="${videoData.thumbnailUrl}" alt="Thumbnail">
@@ -75,10 +72,16 @@ socket.addEventListener("message", (event) => {
                 </div>
             `;
 
-            // Append the new video item to the new videos list
-            newVideoListElement.insertBefore(videoItem, newVideoListElement.firstChild);
+            // Insert the new video item at the beginning of the list
+            videoListElement.insertBefore(videoItem, videoListElement.firstChild);
+
+            // Now, check if the total number of videos exceeds 10
+            while (videoListElement.children.length > 10) {
+                // Remove the last child (oldest video)
+                videoListElement.removeChild(videoListElement.lastChild);
+            }
         } else {
-            console.warn(`No new videos section found for keyword: ${keyword}`);
+            console.warn(`No videos section found for keyword: ${videoData.keyword}`);
         }
     } else {
         console.warn("Unknown message type:", data.type);
