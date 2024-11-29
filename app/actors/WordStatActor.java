@@ -11,21 +11,49 @@ import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
+/**
+ * Actor responsible for managing and calculating word statistics from video titles.
+ * The actor interacts with the {@link SearchService} to fetch video data and computes word frequencies.
+ *
+ * Messages handled by this actor:
+ * - {@link WordStatMessages.UpdateVideos}: Updates word statistics based on new videos.
+ * - {@link WordStatMessages.GetWordStats}: Retrieves the current word statistics.
+ */
 public class WordStatActor extends AbstractActor {
 
     private final SearchService searchService;
     private final Map<String, Long> wordStats = new LinkedHashMap<>();
     private final Set<String> processedVideoIds = new HashSet<>(); // To track processed videos
 
+    /**
+     * Constructs a {@code WordStatActor} with the specified {@link SearchService}.
+     *
+     * @param searchService the service used to fetch video data
+     */
     @Inject
     public WordStatActor(SearchService searchService) {
         this.searchService = searchService;
     }
 
+    /**
+     * Creates a {@link Props} instance for this actor.
+     *
+     * @param searchService the {@link SearchService} instance to use
+     * @return a {@link Props} instance for creating a {@code WordStatActor}
+     */
     public static Props props(SearchService searchService) {
         return Props.create(WordStatActor.class, () -> new WordStatActor(searchService));
     }
 
+    /**
+     * Defines the behavior of the actor.
+     *
+     * Supported messages:
+     * - {@link WordStatMessages.UpdateVideos}: Triggers an update of word statistics.
+     * - {@link WordStatMessages.GetWordStats}: Returns the current word statistics.
+     *
+     * @return the actor's behavior
+     */
     @Override
     public Receive createReceive() {
         return receiveBuilder()
@@ -34,18 +62,19 @@ public class WordStatActor extends AbstractActor {
                 .build();
     }
 
+    /**
+     * Handles the {@link WordStatMessages.UpdateVideos} message.
+     * Fetches videos for the given keyword and updates word statistics if the video data has changed.
+     *
+     * @param message the {@link WordStatMessages.UpdateVideos} message containing the keyword
+     */
     private void handleUpdateVideos(WordStatMessages.UpdateVideos message) {
         searchService.searchVideos(message.keyword, GeneralService.NUM_OF_RESULTS_WORD_STATS)
                 .thenAccept(videos -> {
-                    // Check if the latest videos are different
                     if (hasVideosChanged(videos)) {
                         Map<String, Long> updatedStats = createWordStats(videos);
-
-                        // Replace the wordStats map with the new stats
                         wordStats.clear();
                         wordStats.putAll(updatedStats);
-
-                        // Mark these videos as processed
                         setProcessedVideoIds(videos);
                         System.out.println("Updated word statistics for keyword: " + message.keyword);
                     } else {
@@ -58,16 +87,24 @@ public class WordStatActor extends AbstractActor {
                 });
     }
 
+    /**
+     * Checks if the videos retrieved from the search service differ from previously processed videos.
+     *
+     * @param latestVideos the list of videos retrieved from the search service
+     * @return {@code true} if the videos are different, {@code false} otherwise
+     */
     private boolean hasVideosChanged(List<Video> latestVideos) {
-        // Extract IDs from the latest videos
         Set<String> latestVideoIds = latestVideos.stream()
                 .map(Video::getVideoId)
                 .collect(Collectors.toSet());
-
-        // Compare with currently processed IDs
         return !processedVideoIds.equals(latestVideoIds);
     }
 
+    /**
+     * Updates the set of processed video IDs with the IDs of the latest videos.
+     *
+     * @param latestVideos the list of videos retrieved from the search service
+     */
     private void setProcessedVideoIds(List<Video> latestVideos) {
         processedVideoIds.clear();
         processedVideoIds.addAll(
@@ -77,6 +114,13 @@ public class WordStatActor extends AbstractActor {
         );
     }
 
+    /**
+     * Creates a map of word statistics based on the titles of the given videos.
+     * Filters out words with a frequency of 1 and sorts the map by frequency in descending order.
+     *
+     * @param videos the list of videos whose titles are analyzed
+     * @return a sorted map of word frequencies
+     */
     public Map<String, Long> createWordStats(List<Video> videos) {
         return videos.stream()
                 .map(Video::getTitle)
@@ -97,6 +141,11 @@ public class WordStatActor extends AbstractActor {
                 ));
     }
 
+    /**
+     * Retrieves the current word statistics.
+     *
+     * @return a copy of the word statistics map
+     */
     private Map<String, Long> getWordStats() {
         return new LinkedHashMap<>(wordStats);
     }
