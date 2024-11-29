@@ -14,11 +14,9 @@ import static org.junit.Assert.*;
 public class SessionServiceTest {
 
     private Http.RequestBuilder requestBuilder;
-    private ConcurrentHashMap<Http.Request, String> sessionMap;
 
     @Before
     public void setUp() {
-        sessionMap = new ConcurrentHashMap<>();
         requestBuilder = Helpers.fakeRequest();
     }
 
@@ -85,5 +83,21 @@ public class SessionServiceTest {
         String sessionId = resultWithSession.session().get("sessionId").orElse(null);
         assertNotNull("Session ID should be added to the result.", sessionId);
     }
+
+    @Test
+    public void testAddSessionId_ExistingSession() {
+        // Build the request with a session containing "sessionId"
+        Http.Request request = Helpers.fakeRequest()
+                .session("sessionId", "existing-session-id")
+                .build();
+
+        Result result = Results.ok();
+
+        Result updatedResult = SessionService.addSessionId(request, result);
+
+        assertNull("existing-session-id", updatedResult.session());
+    }
+
+
 
 }
