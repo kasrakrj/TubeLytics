@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 /**
  * Service class for generating word-level statistics from a list of Video objects.
- * @author Kasra Karaji
  */
 public class WordStatService {
     /**
@@ -18,11 +17,10 @@ public class WordStatService {
      * This method splits each video title into words, normalizes them to lowercase,
      * removes special characters, and counts the occurrences of each word.
      *
-     * @param videos a list of {@link Video} objects from which to generate word statistics.
+     * @param videos a list of {@link Video} objects from which to generate word statistics
      * @return a {@link Map} where keys are words (String) and values are their corresponding
      *         frequency counts (Long), sorted in descending order by frequency, with words
      *         that appear only once excluded.
-     * @author Kasra Karaji
      */
     public Map<String, Long> createWordStats(List<Video> videos){
 

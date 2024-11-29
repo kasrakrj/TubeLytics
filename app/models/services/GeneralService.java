@@ -1,6 +1,7 @@
 package models.services;
 
 import actors.ChannelProfileMessages;
+import actors.WordStatMessages;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import models.entities.Video;
@@ -84,6 +85,31 @@ public class GeneralService {
                 .thenApply(videos -> {
                     searchService.addSearchResult(getSessionId(request), standardizedKeyword, videos);
                     return addSessionId(request, ok(views.html.wordStats.render(standardizedKeyword, wordStatService.createWordStats(videos))));
+                }).exceptionally(ex -> {
+                    ex.printStackTrace();
+                    return internalServerError(views.html.errorPage.render("An error occurred while fetching word stats."));
+                });
+    }
+
+    public static CompletionStage<Result> wordStatActorHelper(SearchService searchService, ActorRef wordStatActor, String keyword, Http.Request request){
+        if (!isKeywordValid(keyword)) {
+            System.out.println("Keyword is not valid");
+            return CompletableFuture.completedFuture(redirect(controllers.routes.YoutubeController.index()));
+        }
+
+        String standardizedKeyword = keyword.trim().toLowerCase();
+
+        // Ask the actor to update videos
+        Patterns.ask(
+                wordStatActor,
+                new WordStatMessages.UpdateVideos(standardizedKeyword),
+                Duration.ofSeconds(5)
+        );
+
+        return Patterns.ask(wordStatActor, new WordStatMessages.GetWordStats(), Duration.ofSeconds(5))
+                .thenApply(response -> {
+                    Map<String, Long> wordStats = (Map<String, Long>) response;
+                    return addSessionId(request, ok(views.html.wordStats.render(standardizedKeyword, wordStats)));
                 }).exceptionally(ex -> {
                     ex.printStackTrace();
                     return internalServerError(views.html.errorPage.render("An error occurred while fetching word stats."));
