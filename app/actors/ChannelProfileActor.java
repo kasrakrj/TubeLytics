@@ -67,7 +67,7 @@ public class ChannelProfileActor extends AbstractActor {
     private void handleGetChannelVideos(ChannelProfileMessages.GetChannelVideos message) {
         String channelId = message.getChannelId();
         int maxResults = message.getMaxResults();
-        String youtubeChannelVideosUrl = youTubeService.getApiUrl() + "/search?part=snippet&type=video&";
+        String youtubeChannelVideosUrl = youTubeService.getApiUrl() + "/search?part=snippet&order=date&type=video";
         String apiUrl = youtubeChannelVideosUrl + "channelId=" + channelId + "&maxResults=" + maxResults + "&key=" + youTubeService.getApiKey();
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUrl)).build();

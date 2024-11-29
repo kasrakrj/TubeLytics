@@ -23,11 +23,11 @@ public class ChannelProfileViewTest {
 
         // List of mock videos
         Video video1 = new Video("Video 1", "Happy mappy music video.",
-                "Channel", "sample-thumbnail-url-1.jpg", "videoId1", "channelId1", "video-url-1");
+                "Channel", "sample-thumbnail-url-1.jpg", "videoId1", "channelId1", "video-url-1", "2024-11-27T11:01:06Z'");
         Video video2 = new Video("Video 2", "Hello music video by unknown artist.",
-                "Channel", "sample-thumbnail-url-2.jpg", "videoId2", "channelId2", "video-url-2");
+                "Channel", "sample-thumbnail-url-2.jpg", "videoId2", "channelId2", "video-url-2", "2024-11-27T11:01:06Z'");
         Video video3 = new Video("Video 3", "Top rated music video of 2024.",
-                "Channel", "sample-thumbnail-url-3.jpg", "videoId3", "channelId3", "video-url-3");
+                "Channel", "sample-thumbnail-url-3.jpg", "videoId3", "channelId3", "video-url-3", "2024-11-27T11:01:06Z");
 
         List<Video> videos = Arrays.asList(video1, video2, video3);
 
