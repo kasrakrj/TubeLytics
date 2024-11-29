@@ -3,6 +3,7 @@ package controllers;
 import actors.ChannelProfileActor;
 import actors.SentimentActor;
 import actors.UserActor;
+import actors.WordStatActor;
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
 import akka.stream.Materializer;
@@ -41,6 +42,7 @@ public class YoutubeController extends Controller {
     // Actor reference to interact with SentimentActor
     private final ActorRef sentimentActor;
     private final ActorRef channelProfileActor;
+    private final ActorRef wordStatActor;
 
     private final YouTubeService youTubeService;
 
@@ -77,6 +79,7 @@ public class YoutubeController extends Controller {
         // Initialize SentimentActor
         this.sentimentActor = actorSystem.actorOf(SentimentActor.props(sentimentService, httpExecutionContext));
         this.channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(this.youTubeService), "channelProfileActor");
+        this.wordStatActor = actorSystem.actorOf(WordStatActor.props(this.searchService), "wordStatActor");
     }
 
     /**
@@ -135,7 +138,8 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> wordStats(String keyword, Http.Request request) {
-        return GeneralService.wordStatHelper(searchService, wordStatService, keyword, request);
+//        return GeneralService.wordStatHelper(searchService, wordStatService, keyword, request);
+        return GeneralService.wordStatActorHelper(searchService, wordStatActor, keyword, request);
     }
 
     public WebSocket ws() {
