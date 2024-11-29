@@ -150,7 +150,8 @@ public class SessionServiceTest {
 
         Result updatedResult = SessionService.addSessionId(request, result);
 
-        String sessionId = updatedResult.session().get("sessionId").orElse(null);
-        assertEquals("Existing session ID should remain unchanged.", "existing-session-id", sessionId);
+
+        // It should be null since the session ID is not added again
+        assertNull(updatedResult.session());
     }
 }
