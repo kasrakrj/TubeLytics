@@ -7,6 +7,8 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static org.junit.Assert.assertNotNull;
+
 public class ChannelProfileMessagesTest {
 
     @Test
@@ -56,5 +58,14 @@ public class ChannelProfileMessagesTest {
         String errorMessage = "An error occurred";
         ChannelProfileMessages.ChannelProfileError error = new ChannelProfileMessages.ChannelProfileError(errorMessage);
         Assert.assertEquals(errorMessage, error.getErrorMessage());
+    }
+
+    @Test
+    public void testClassInstantiation() {
+        // Create an instance of the ChannelProfileMessages class
+        ChannelProfileMessages channelProfileMessages = new ChannelProfileMessages();
+
+        // Assert that the object is not null
+        assertNotNull("ChannelProfileMessages instance should not be null", channelProfileMessages);
     }
 }
