@@ -1,69 +1,131 @@
 package actors;
 
-import akka.actor.AbstractActor;
-import akka.actor.Props;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.testkit.javadsl.TestKit;
+import models.entities.Video;
 import models.services.TagsService;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import scala.concurrent.duration.Duration;
 
-import java.util.concurrent.CompletionStage;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-import static akka.pattern.Patterns.pipe;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
 
-/**
- * Actor responsible for fetching video information and tags.
- */
-public class TagActorTest extends AbstractActor {
+public class TagActorTest {
 
-    private final TagsService tagsService;
+    static ActorSystem system;
 
-    /**
-     * Creates Props for TagActorTest.
-     *
-     * @param tagsService The TagsService instance.
-     * @return A Props instance.
-     */
-    public static Props props(TagsService tagsService) {
-        return Props.create(TagActorTest.class, () -> new TagActorTest(tagsService));
+    @BeforeClass
+    public static void setup() {
+        system = ActorSystem.create("TagActorTestSystem");
     }
 
-    public TagActorTest(TagsService tagsService) {
-        this.tagsService = tagsService;
+    @AfterClass
+    public static void teardown() {
+        TestKit.shutdownActorSystem(system, Duration.create("10 seconds"), false);
+        system = null;
     }
 
-    @Override
-    public Receive createReceive() {
-        return receiveBuilder()
-                .match(TagMessagesTest.GetVideo.class, this::handleGetVideo)
-                .match(TagMessagesTest.GetTags.class, this::handleGetTags)
-                .build();
+    @Test
+    public void testHandleGetVideoSuccess() {
+        new TestKit(system) {{
+            // Arrange
+            TagsService mockTagsService = mock(TagsService.class);
+            String videoId = "video123";
+            Video mockVideo = new Video(
+                    "Sample Title",
+                    "Sample Description",
+                    "Sample Channel",
+                    "http://thumbnail.url",
+                    videoId,
+                    "channel123",
+                    "http://video.url",
+                    "2023-01-01T00:00:00Z"
+            );
+
+            when(mockTagsService.getVideoByVideoId(videoId))
+                    .thenReturn(CompletableFuture.completedFuture(mockVideo));
+
+            ActorRef tagActor = system.actorOf(TagActor.props(mockTagsService));
+
+            // Act
+            tagActor.tell(new TagMessages.GetVideo(videoId), getRef());
+
+            // Assert
+            TagMessages.GetVideoResponse response = expectMsgClass(TagMessages.GetVideoResponse.class);
+            assertEquals(mockVideo, response.getVideo());
+        }};
     }
 
-    private void handleGetVideo(TagMessagesTest.GetVideo message) {
-        String videoId = message.getVideoId();
+    @Test
+    public void testHandleGetVideoFailure() {
+        new TestKit(system) {{
+            // Arrange
+            TagsService mockTagsService = mock(TagsService.class);
+            String videoId = "video123";
+            String errorMessage = "Video not found";
 
-        CompletionStage<Object> futureResponse = tagsService.getVideoByVideoId(videoId)
-                .handle((video, ex) -> {
-                    if (ex != null) {
-                        return new TagMessagesTest.TagsError(ex.getMessage());
-                    } else {
-                        return new TagMessagesTest.GetVideoResponse(video);
-                    }
-                });
+            when(mockTagsService.getVideoByVideoId(videoId))
+                    .thenReturn(CompletableFuture.failedFuture(new Exception(errorMessage)));
 
-        pipe(futureResponse, getContext().dispatcher()).to(sender());
+            ActorRef tagActor = system.actorOf(TagActor.props(mockTagsService));
+
+            // Act
+            tagActor.tell(new TagMessages.GetVideo(videoId), getRef());
+
+            // Assert
+            TagMessages.TagsError response = expectMsgClass(TagMessages.TagsError.class);
+            assertEquals(errorMessage, response.getErrorMessage());
+        }};
     }
 
-    private void handleGetTags(TagMessagesTest.GetTags message) {
-        String videoId = message.getVideoId();
+    @Test
+    public void testHandleGetTagsSuccess() {
+        new TestKit(system) {{
+            // Arrange
+            TagsService mockTagsService = mock(TagsService.class);
+            String videoId = "video123";
+            List<String> mockTags = Arrays.asList("tag1", "tag2");
 
-        CompletionStage<Object> futureResponse = tagsService.getTagsByVideoId(videoId)
-                .handle((tags, ex) -> {
-                    if (ex != null) {
-                        return new TagMessagesTest.TagsError(ex.getMessage());
-                    } else {
-                        return new TagMessagesTest.GetTagsResponse(tags);
-                    }
-                });
+            when(mockTagsService.getTagsByVideoId(videoId))
+                    .thenReturn(CompletableFuture.completedFuture(mockTags));
 
-        pipe(futureResponse, getContext().dispatcher()).to(sender());
+            ActorRef tagActor = system.actorOf(TagActor.props(mockTagsService));
+
+            // Act
+            tagActor.tell(new TagMessages.GetTags(videoId), getRef());
+
+            // Assert
+            TagMessages.GetTagsResponse response = expectMsgClass(TagMessages.GetTagsResponse.class);
+            assertEquals(mockTags, response.getTags());
+        }};
+    }
+
+    @Test
+    public void testHandleGetTagsFailure() {
+        new TestKit(system) {{
+            // Arrange
+            TagsService mockTagsService = mock(TagsService.class);
+            String videoId = "video123";
+            String errorMessage = "Tags not found";
+
+            when(mockTagsService.getTagsByVideoId(videoId))
+                    .thenReturn(CompletableFuture.failedFuture(new Exception(errorMessage)));
+
+            ActorRef tagActor = system.actorOf(TagActor.props(mockTagsService));
+
+            // Act
+            tagActor.tell(new TagMessages.GetTags(videoId), getRef());
+
+            // Assert
+            TagMessages.TagsError response = expectMsgClass(TagMessages.TagsError.class);
+            assertEquals(errorMessage, response.getErrorMessage());
+        }};
     }
 }
