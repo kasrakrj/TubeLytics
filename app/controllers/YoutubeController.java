@@ -37,6 +37,7 @@ public class YoutubeController extends Controller {
     private final ActorRef sentimentActor;
     private final ActorRef channelProfileActor;
     private final ActorRef wordStatActor;
+    private final ActorRef tagActor;
 
     private final YouTubeService youTubeService;
 
@@ -72,6 +73,7 @@ public class YoutubeController extends Controller {
         this.sentimentActor = actorSystem.actorOf(SentimentActor.props(sentimentService), "sentimentActor");
         this.channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(this.youTubeService), "channelProfileActor");
         this.wordStatActor = actorSystem.actorOf(WordStatActor.props(this.searchService), "wordStatActor");
+        this.tagActor= actorSystem.actorOf(TagActor.props(this.tagsService));
     }
 
     /**
@@ -94,7 +96,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> tags(String videoID, Http.Request request) {
-        return GeneralService.tagHelper(tagsService, videoID, request);
+        return GeneralService.tagHelper(tagActor, videoID, request);
     }
     /**
      * Performs a video search based on a keyword, storing search history and calculating sentiment.
