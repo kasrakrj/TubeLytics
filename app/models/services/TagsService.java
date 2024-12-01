@@ -26,7 +26,6 @@ public class TagsService {
         this.httpClient = HttpClient.newHttpClient();
     }
 
-
     public CompletionStage<Video> getVideoByVideoId(String videoId) {
         String apiUrl = String.format("%s/videos?part=snippet&id=%s&key=%s",
                 youTubeService.getApiUrl(), videoId, youTubeService.getApiKey());
