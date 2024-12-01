@@ -1,6 +1,7 @@
 package models.services;
 
 import actors.ChannelProfileMessages;
+import actors.TagMessages;
 import actors.WordStatMessages;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
@@ -31,16 +32,38 @@ public class GeneralService {
         return keyword != null && !keyword.trim().isEmpty();
     }
 
-    public static CompletionStage<Result> tagHelper(TagsService tagsService, String videoID, Http.Request request){
-        return tagsService.getVideoByVideoId(videoID)
-                .thenCompose(video ->
-                        tagsService.getTagsByVideo(video)
-                                .thenApply(tags -> addSessionId(request, ok(views.html.tagsPage.render(video, tags))))
-                ).exceptionally(ex -> {
-                    ex.printStackTrace();
-                    return internalServerError(views.html.errorPage.render("An error occurred while fetching tags."));
-                });
+    /**
+     * Asynchronously retrieves video and tag information using the TagActor.
+     *
+     * @param tagActor The actor responsible for fetching tags.
+     * @param videoId  The ID of the video.
+     * @param request  The HTTP request.
+     * @return A CompletionStage containing the Result to render.
+     */
+    public static CompletionStage<Result> tagHelper(ActorRef tagActor, String videoId, Http.Request request) {
+        // Ask the actor for channel info
+        CompletionStage<Object> responseFuture = Patterns.ask(
+                tagActor,
+                new TagMessages.GetVideoAndTags(videoId),
+                Duration.ofSeconds(5)
+        );
+
+        return responseFuture.thenApply(response -> {
+            if (response instanceof TagMessages.VideoAndTagsResponse) {
+                TagMessages.VideoAndTagsResponse result = (TagMessages.VideoAndTagsResponse) response;
+                return addSessionId(request, ok(views.html.tagsPage.render(result.getVideo(), result.getTags())));
+            } else if (response instanceof TagMessages.TagError) {
+                TagMessages.TagError error = (TagMessages.TagError) response;
+                return internalServerError(views.html.errorPage.render(error.getErrorMessage()));
+            } else {
+                return internalServerError(views.html.errorPage.render("An unexpected error occurred."));
+            }
+        }).exceptionally(ex -> {
+            ex.printStackTrace();
+            return internalServerError(views.html.errorPage.render("An error occurred while fetching tags."));
+        });
     }
+
 
     public static CompletionStage<Result> channelProfileHelper(ActorRef channelProfileActor, String channelId, Http.Request request){
         // Ask the actor for channel info

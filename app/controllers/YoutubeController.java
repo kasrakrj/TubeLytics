@@ -1,9 +1,6 @@
 package controllers;
 
-import actors.ChannelProfileActor;
-import actors.SentimentActor;
-import actors.UserActor;
-import actors.WordStatActor;
+import actors.*;
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
 import akka.stream.Materializer;
@@ -43,6 +40,8 @@ public class YoutubeController extends Controller {
     private final ActorRef sentimentActor;
     private final ActorRef channelProfileActor;
     private final ActorRef wordStatActor;
+    private final ActorRef tagActor;
+
 
     private final YouTubeService youTubeService;
 
@@ -80,6 +79,7 @@ public class YoutubeController extends Controller {
         this.sentimentActor = actorSystem.actorOf(SentimentActor.props(sentimentService, httpExecutionContext));
         this.channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(this.youTubeService), "channelProfileActor");
         this.wordStatActor = actorSystem.actorOf(WordStatActor.props(this.searchService), "wordStatActor");
+        this.tagActor= actorSystem.actorOf(TagActor.props(this.tagsService, "tagActor"));
     }
 
     /**
@@ -102,7 +102,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> tags(String videoID, Http.Request request) {
-        return GeneralService.tagHelper(tagsService, videoID, request);
+        return GeneralService.tagHelper(tagActor, videoID, request);
     }
 
     /**
@@ -146,7 +146,7 @@ public class YoutubeController extends Controller {
         return WebSocket.Text.accept(request -> {
             String sessionId = getSessionIdByHeader(request);
             return ActorFlow.actorRef(
-                    out -> UserActor.props(out, searchService, sessionId),
+                    out -> UserActor.props(out, searchService, tagsService,sessionId),
                     actorSystem,
                     materializer
             );

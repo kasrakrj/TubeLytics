@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import models.entities.Video;
 import models.services.SearchService;
+import models.services.TagsService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import scala.concurrent.duration.Duration;
@@ -18,17 +19,20 @@ public class UserActor extends AbstractActor {
     private final Set<String> processedVideoIds = new HashSet<>();
     private final ActorRef out;
     private final SearchService searchService;
+    private final TagsService tagsService; // Add TagsService
+
     private final String sessionId; // Add sessionId to identify the user session
 
     // Props method to accept the WebSocket's ActorRef and SearchService
-    public static Props props(ActorRef out, SearchService searchService, String sessionId) {
-        return Props.create(UserActor.class, () -> new UserActor(out, searchService, sessionId));
+    public static Props props(ActorRef out, SearchService searchService,TagsService tagsService, String sessionId) {
+        return Props.create(UserActor.class, () -> new UserActor(out, searchService,tagsService, sessionId));
     }
 
     // Constructor to initialize the WebSocket out, SearchService, and sessionId
-    public UserActor(ActorRef out, SearchService searchService, String sessionId) {
+    public UserActor(ActorRef out, SearchService searchService,TagsService tagsService, String sessionId) {
         this.out = out;
         this.searchService = searchService;
+        this.tagsService = tagsService; // Initialize TagsService
         this.sessionId = sessionId;
 
         // Initialize processedVideoIds with video IDs from the initial search history
@@ -112,6 +116,7 @@ public class UserActor extends AbstractActor {
                 .build();
     }
 
+
     private void fetchAndSendResults(String keyword) {
         searchService.fetchNewVideos(keyword, 10, processedVideoIds)
                 .thenAccept(newResults -> {
@@ -147,6 +152,33 @@ public class UserActor extends AbstractActor {
         json.put("channelId", video.getChannelId());
         json.put("channelTitle", video.getChannelTitle());
         return json.toString();
+    }
+    private void fetchAndSendTagsForVideo(String videoId) {
+        // Fetch tags directly using TagsService
+        if (processedVideoIds.contains(videoId)) {
+            return; // Avoid reprocessing the same video
+        }
+        processedVideoIds.add(videoId);
+
+        tagsService.getTagsByVideoId(videoId)
+                .thenAccept(tags -> {
+                    // Create a JSON message to send to the client
+                    JSONObject json = new JSONObject();
+                    json.put("type", "tags");
+                    json.put("videoId", videoId);
+                    json.put("tags", tags);
+
+                    out.tell(json.toString(), self());
+                })
+                .exceptionally(ex -> {
+                    // Handle exceptions
+                    JSONObject errorJson = new JSONObject();
+                    errorJson.put("type", "error");
+                    errorJson.put("message", "Error fetching tags: " + ex.getMessage());
+
+                    out.tell(errorJson.toString(), self());
+                    return null;
+                });
     }
 
     private void sendHeartbeat() {
