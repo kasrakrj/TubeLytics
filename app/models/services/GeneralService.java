@@ -4,18 +4,20 @@ import actors.ChannelProfileMessages;
 import actors.TagMessages;
 import actors.WordStatMessages;
 import akka.actor.ActorRef;
+import akka.japi.Pair;
 import akka.pattern.Patterns;
 import models.entities.Video;
 import org.json.JSONObject;
 import play.mvc.Http;
 import play.mvc.Result;
-import utils.VideoSorter;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import static models.services.SessionService.addSessionId;
@@ -41,20 +43,43 @@ public class GeneralService {
      * @return A CompletionStage containing the Result to render.
      */
     public static CompletionStage<Result> tagHelper(ActorRef tagActor, String videoId, Http.Request request) {
-        // Ask the actor for channel info
-        CompletionStage<Object> responseFuture = Patterns.ask(
+        // Ask the actor for video information
+        CompletionStage<Object> videoFuture = Patterns.ask(
                 tagActor,
-                new TagMessages.GetVideoAndTags(videoId),
+                new TagMessages.GetVideo(videoId),
                 Duration.ofSeconds(5)
         );
 
-        return responseFuture.thenApply(response -> {
-            if (response instanceof TagMessages.VideoAndTagsResponse) {
-                TagMessages.VideoAndTagsResponse result = (TagMessages.VideoAndTagsResponse) response;
-                return addSessionId(request, ok(views.html.tagsPage.render(result.getVideo(), result.getTags())));
-            } else if (response instanceof TagMessages.TagError) {
-                TagMessages.TagError error = (TagMessages.TagError) response;
+        // Ask the actor for tags
+        CompletionStage<Object> tagsFuture = Patterns.ask(
+                tagActor,
+                new TagMessages.GetTags(videoId),
+                Duration.ofSeconds(5)
+        );
+
+        // Combine both futures
+        return videoFuture.thenCombine(tagsFuture, (videoResponse, tagsResponse) -> {
+            // Check for errors in video response
+            if (videoResponse instanceof TagMessages.TagsError) {
+                TagMessages.TagsError error = (TagMessages.TagsError) videoResponse;
                 return internalServerError(views.html.errorPage.render(error.getErrorMessage()));
+            }
+
+            // Check for errors in tags response
+            if (tagsResponse instanceof TagMessages.TagsError) {
+                TagMessages.TagsError error = (TagMessages.TagsError) tagsResponse;
+                return internalServerError(views.html.errorPage.render(error.getErrorMessage()));
+            }
+
+            // Check if responses are of correct types
+            if (videoResponse instanceof TagMessages.GetVideoResponse && tagsResponse instanceof TagMessages.GetTagsResponse) {
+                TagMessages.GetVideoResponse videoResult = (TagMessages.GetVideoResponse) videoResponse;
+                TagMessages.GetTagsResponse tagsResult = (TagMessages.GetTagsResponse) tagsResponse;
+
+                Video video = videoResult.getVideo();
+                List<String> tags = tagsResult.getTags();
+
+                return addSessionId(request, ok(views.html.tagsPage.render(video, tags)));
             } else {
                 return internalServerError(views.html.errorPage.render("An unexpected error occurred."));
             }

@@ -1,13 +1,14 @@
 package actors;
 
-import java.io.Serializable;
 import models.entities.Video;
+
+import java.io.Serializable;
 import java.util.List;
 
 /**
- * Messages used for communication with TagActor.
+ * Messages used for communication with TagActorTest.
  */
-public class TagMessages {
+public class TagMessagesTest {
 
     // Message to request video information
     public static class GetVideo implements Serializable {

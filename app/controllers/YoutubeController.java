@@ -79,7 +79,7 @@ public class YoutubeController extends Controller {
         this.sentimentActor = actorSystem.actorOf(SentimentActor.props(sentimentService, httpExecutionContext));
         this.channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(this.youTubeService), "channelProfileActor");
         this.wordStatActor = actorSystem.actorOf(WordStatActor.props(this.searchService), "wordStatActor");
-        this.tagActor= actorSystem.actorOf(TagActor.props(this.tagsService, "tagActor"));
+        this.tagActor= actorSystem.actorOf(TagActor.props(this.tagsService));
     }
 
     /**
