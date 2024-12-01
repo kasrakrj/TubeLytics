@@ -148,33 +148,20 @@ public class SentimentService {
      * @return A CompletionStage containing a list of all results
      */
     private <T> CompletionStage<List<T>> sequence(List<CompletionStage<T>> stages) {
-        CompletableFuture<List<T>> result = CompletableFuture.completedFuture(List.of());
-
-        for (CompletionStage<T> stage : stages) {
-            result = result.thenCombine(
-                    stage,
-                    (list, item) -> {
-                        List<T> newList = new ArrayList<>(list);
-                        newList.add(item);
-                        return newList;
-                    }
-            );
-        }
-
-        return result;
-    }
-    public CompletionStage<Map<String, String>> analyzeVideos(List<Video> videos) {
-        List<CompletionStage<Map.Entry<String, String>>> sentimentStages = videos.stream()
-                .map(video -> analyzeAsync(video.getDescription())
-                        .thenApply(sentiment -> Map.entry(video.getVideoId(), sentiment)))
-                .collect(Collectors.toList());
-
-        // Combine all CompletionStages into a single CompletionStage of the final map
-        return CompletableFuture.allOf(sentimentStages.toArray(new CompletableFuture[0]))
-                .thenApply(v -> sentimentStages.stream()
-                        .map(CompletionStage::toCompletableFuture)
-                        .map(CompletableFuture::join)
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+        // Start with an already completed empty list
+        return stages.stream()
+                .reduce(
+                        CompletableFuture.completedFuture(new ArrayList<>()), // Initial accumulator
+                        (combinedFuture, stage) -> combinedFuture.thenCombine(stage, (list, item) -> {
+                            List<T> newList = new ArrayList<>(list);
+                            newList.add(item);
+                            return newList;
+                        }),
+                        (f1, f2) -> f1.thenCombine(f2, (list1, list2) -> {
+                            List<T> newList = new ArrayList<>(list1);
+                            newList.addAll(list2);
+                            return newList;
+                        })
                 );
     }
 

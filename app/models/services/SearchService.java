@@ -9,13 +9,13 @@ import java.net.URLEncoder;
 import java.net.http.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * The SearchService class provides methods to search for videos on YouTube, manage search history,
@@ -109,25 +109,26 @@ public class SearchService {
      * Generates mock videos for testing mode.
      */
     private List<Video> generateMockVideos(String keyword, int numOfResults, Set<String> processedVideoIds) {
-        List<Video> mockVideos = new ArrayList<>();
-        for (int i = 0; i < numOfResults; i++) {
-            String videoId;
-            do {
-                videoId = UUID.randomUUID().toString();
-            } while (processedVideoIds.contains(videoId));
+        return IntStream.range(0, numOfResults)
+                .mapToObj(i -> {
+                    String videoId;
+                    do {
+                        videoId = UUID.randomUUID().toString();
+                    } while (processedVideoIds.contains(videoId));
 
-            Video video = new Video();
-            video.setVideoId(videoId);
-            video.setTitle("Mock Video " + (i + 1) + " for keyword: " + keyword);
-            video.setDescription("Description for mock video " + (i + 1));
-            video.setThumbnailUrl("https://picsum.photos/120/80?random=" + UUID.randomUUID());
-            video.setChannelId("UCH57DD9ssIIVfuav-j2iavw");
-            video.setChannelTitle("Mock Channel " + (i + 1));
-            video.setPublishedAt(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
-            mockVideos.add(video);
-        }
-        return mockVideos;
+                    Video video = new Video();
+                    video.setVideoId(videoId);
+                    video.setTitle("Mock Video " + (i + 1) + " for keyword: " + keyword);
+                    video.setDescription("Description for mock video " + (i + 1));
+                    video.setThumbnailUrl("https://picsum.photos/120/80?random=" + UUID.randomUUID());
+                    video.setChannelId("UCH57DD9ssIIVfuav-j2iavw");
+                    video.setChannelTitle("Mock Channel " + (i + 1));
+                    video.setPublishedAt(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
+                    return video;
+                })
+                .collect(Collectors.toList());
     }
+
     /**
      * Updates all session search histories with new videos for the given keyword.
      * If any session contains the keyword, the new videos are added to the respective session's keyword list.
@@ -136,24 +137,27 @@ public class SearchService {
      * @param keyword   The search keyword for which new videos are added.
      * @param newVideos The new videos to add for the keyword.
      */
-    public void updateVideosForKeywordAcrossSessions(String keyword, List<Video> newVideos) {
-        for (Map.Entry<String, LinkedHashMap<String, List<Video>>> entry : sessionSearchHistoryMap.entrySet()) {
-            LinkedHashMap<String, List<Video>> searchHistory = entry.getValue();
-            synchronized (searchHistory) {
-                if (searchHistory.containsKey(keyword)) {
-                    List<Video> existingVideos = searchHistory.getOrDefault(keyword, new ArrayList<>());
-                    existingVideos.addAll(0, newVideos); // Add new videos at the top
+    public void updateVideosForKeyword(String keyword, List<Video> newVideos) {
+        sessionSearchHistoryMap.values().stream()
+                .map(searchHistory -> {
+                    synchronized (searchHistory) {
+                        if (searchHistory.containsKey(keyword)) {
+                            List<Video> existingVideos = new ArrayList<>(searchHistory.getOrDefault(keyword, new ArrayList<>()));
+                            existingVideos.addAll(0, newVideos); // Add new videos at the top
 
-                    // Trim to the most recent 10 videos
-                    if (existingVideos.size() > MAX_SEARCH_HISTORY) {
-                        existingVideos = existingVideos.subList(0, MAX_SEARCH_HISTORY);
+                            // Trim to the most recent 10 videos
+                            if (existingVideos.size() > MAX_SEARCH_HISTORY) {
+                                existingVideos = existingVideos.subList(0, MAX_SEARCH_HISTORY);
+                            }
+
+                            searchHistory.put(keyword, existingVideos);
+                        }
                     }
-
-                    searchHistory.put(keyword, existingVideos);
-                }
-            }
-        }
+                    return searchHistory;
+                })
+                .count(); // Ensures the stream is executed
     }
+
 
 
     /**
@@ -171,20 +175,29 @@ public class SearchService {
     public CompletionStage<Map<String, String>> calculateSentiments(String sessionId) {
         Map<String, List<Video>> searchHistory = getSearchHistory(sessionId);
 
-        // Map each search history entry to a CompletionStage of Map.Entry
+        // Convert each entry to a CompletionStage of Map.Entry
         List<CompletionStage<Map.Entry<String, String>>> sentimentStages = searchHistory.entrySet().stream()
                 .map(entry -> sentimentService.avgSentiment(entry.getValue())
                         .thenApply(sentiment -> Map.entry(entry.getKey(), sentiment)))
                 .collect(Collectors.toList());
 
-        // Combine all CompletionStages into a single CompletionStage of the final map
-        return CompletableFuture.allOf(sentimentStages.toArray(new CompletableFuture[0]))
-                .thenApply(v -> sentimentStages.stream()
-                        .map(CompletionStage::toCompletableFuture)
-                        .map(CompletableFuture::join)
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+        // Start with an empty CompletableFuture<Map<String, String>>
+        return sentimentStages.stream()
+                .reduce(
+                        CompletableFuture.completedFuture(new HashMap<>()), // Initial accumulator
+                        (combinedFuture, currentStage) -> combinedFuture.thenCombine(currentStage, (map, entry) -> {
+                            map.put(entry.getKey(), entry.getValue());
+                            return map;
+                        }),
+                        (f1, f2) -> f1.thenCombine(f2, (map1, map2) -> {
+                            map1.putAll(map2);
+                            return map1;
+                        })
                 );
     }
+
+
+
 
     /**
      * Clears the search history for a session.

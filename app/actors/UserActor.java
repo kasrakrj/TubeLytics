@@ -3,10 +3,8 @@ package actors;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import akka.pattern.PatternsCS;
 import models.entities.Video;
 import models.services.SearchService;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import scala.concurrent.duration.Duration;
 
@@ -33,17 +31,19 @@ public class UserActor extends AbstractActor {
         this.sessionId = sessionId;
 
         Map<String, List<Video>> initialSearchHistory = searchService.getSearchHistory(sessionId);
+
         if (initialSearchHistory != null) {
-            for (Map.Entry<String, List<Video>> entry : initialSearchHistory.entrySet()) {
-                String keyword = entry.getKey();
-                List<Video> videos = entry.getValue();
-                searchHistory.add(keyword);
-                for (Video video : videos) {
-                    processedVideoIds.add(video.getVideoId());
-                }
-            }
+            // Process the search history keywords
+            searchHistory.addAll(initialSearchHistory.keySet());
+
+            // Process the video IDs
+            initialSearchHistory.values().stream()
+                    .flatMap(List::stream) // Flatten all videos from the lists
+                    .map(Video::getVideoId) // Map to video IDs
+                    .forEach(processedVideoIds::add); // Add to the processed set
         }
     }
+
 
     @Override
     public void preStart() {
@@ -74,9 +74,8 @@ public class UserActor extends AbstractActor {
                         sendHeartbeat();
                     } else if (message.equals("FetchVideos")) {
                         System.out.println("FetchVideos triggered at: " + LocalDateTime.now());
-                        for (String keyword : searchHistory) {
-                            fetchAndSendResults(keyword);
-                        }
+                        searchHistory.stream()
+                                .forEach(this::fetchAndSendResults); // Process each keyword
                     } else {
                         // Other message handling logic
                     }
@@ -84,17 +83,18 @@ public class UserActor extends AbstractActor {
                 .build();
     }
 
+
     private void fetchAndSendResults(String keyword) {
         System.out.println("Fetching results for keyword: " + keyword);
         searchService.fetchNewVideos(keyword, 10, processedVideoIds)
                 .thenAccept(newResults -> {
                     System.out.println("Fetched " + newResults.size() + " new videos for keyword: " + keyword);
                     if (!newResults.isEmpty()) {
-                        searchService.updateVideosForKeywordAcrossSessions(keyword, newResults);
-                        for (Video video : newResults) {
-                            String json = videoToJson(video, keyword);
-                            out.tell(json, self());
-                        }
+                        searchService.updateVideosForKeyword(keyword, newResults);
+
+                        newResults.stream()
+                                .map(video -> videoToJson(video, keyword)) // Convert each video to JSON
+                                .forEach(json -> out.tell(json, self())); // Send each JSON to the actor's output
                     }
                 })
                 .exceptionally(e -> {
@@ -102,6 +102,7 @@ public class UserActor extends AbstractActor {
                     return null;
                 });
     }
+
 
 
     private String videoToJson(Video video, String keyword) {
