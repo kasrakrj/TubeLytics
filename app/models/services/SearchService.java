@@ -121,7 +121,7 @@ public class SearchService {
             video.setTitle("Mock Video " + (i + 1) + " for keyword: " + keyword);
             video.setDescription("Description for mock video " + (i + 1));
             video.setThumbnailUrl("https://picsum.photos/120/80?random=" + UUID.randomUUID());
-            video.setChannelId(UUID.randomUUID().toString());
+            video.setChannelId("UCH57DD9ssIIVfuav-j2iavw");
             video.setChannelTitle("Mock Channel " + (i + 1));
             video.setPublishedAt(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
             mockVideos.add(video);
