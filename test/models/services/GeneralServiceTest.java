@@ -1,10 +1,19 @@
-package controllers;
+package models.services;
 
+import actors.ChannelProfileActor;
+import actors.SentimentActor;
+import actors.SupervisorActor;
+import actors.TagActor;
+import akka.actor.ActorSystem;
+import akka.stream.Materializer;
+import controllers.YoutubeController;
+import controllers.routes;
 import models.entities.Video;
 import models.services.*;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+import play.libs.concurrent.HttpExecutionContext;
 import play.mvc.Http;
 import play.mvc.Result;
 
@@ -20,7 +29,7 @@ import static org.mockito.Mockito.*;
 import static play.mvc.Http.Status.OK;
 import static play.mvc.Http.Status.SEE_OTHER;
 
-public class YoutubeControllerTest {
+public class GeneralServiceTest {
 
     private YoutubeController youtubeController;
     private SearchService mockSearchService;
@@ -28,6 +37,15 @@ public class YoutubeControllerTest {
     private WordStatService mockWordStatService;
     private ChannelProfileService mockChannelProfileService;
     private TagsService mockTagsService;
+    private ActorSystem mockActorSystem;
+    private Materializer mockMaterializer;
+    private ChannelProfileActor mockChannelProfileActor;
+    private TagActor mockTagActor;
+    private YouTubeService mockYouTubeService;
+    private SentimentActor mockSentimentActor;
+    private SupervisorActor mockSupervisorActor;
+    private HttpExecutionContext mockHttpExecutionContext;
+
 
     @Before
     public void setUp() {
@@ -35,8 +53,18 @@ public class YoutubeControllerTest {
         mockWordStatService = mock(WordStatService.class);
         mockChannelProfileService = mock(ChannelProfileService.class);
         mockTagsService = mock(TagsService.class);
+        mockActorSystem = mock(ActorSystem.class);
+        mockHttpExecutionContext= mock(HttpExecutionContext.class);
         youtubeController = new YoutubeController(
-                mockSearchService, mockWordStatService, mockChannelProfileService, mockTagsService, actorSystem, materializer, channelProfileActor, youTubeService);
+                mockSearchService,
+                mockWordStatService,
+                mockChannelProfileService,
+                mockTagsService,
+                mockActorSystem,
+                mockMaterializer,
+                mockYouTubeService,
+                mockSentimentService,
+                mockHttpExecutionContext);
     }
 
     @Test
@@ -67,9 +95,8 @@ public class YoutubeControllerTest {
         Http.Request request = mock(Http.Request.class);
         when(request.session()).thenReturn(new Http.Session(Map.of("sessionId", "existingSessionId")));
 
-        Video video = new Video("Sample Title", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId");
+        Video video = new Video("Sample Title", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId","2024-11-24");
         when(mockTagsService.getVideoByVideoId("videoId")).thenReturn(CompletableFuture.completedFuture(video));
-        when(mockTagsService.getTagsByVideo(any(Video.class))).thenReturn(CompletableFuture.completedFuture(List.of("tag1", "tag2")));
 
         CompletionStage<Result> resultStage = youtubeController.tags("videoId", request);
         Result result = resultStage.toCompletableFuture().join();
@@ -82,7 +109,7 @@ public class YoutubeControllerTest {
         Http.Request request = mock(Http.Request.class);
         when(request.session()).thenReturn(new Http.Session(Map.of("sessionId", "existingSessionId")));
 
-        List<Video> videos = List.of(new Video("Sample Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId"));
+        List<Video> videos = List.of(new Video("Sample Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId","2024-11-24"));
         when(mockSearchService.searchVideos(anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(videos));
 
         Map<String, String> individualSentiments = Map.of("keyword", "positive");
@@ -136,8 +163,8 @@ public class YoutubeControllerTest {
         when(mockChannelProfileService.getChannelInfo("channelId")).thenReturn(CompletableFuture.completedFuture(channelInfo));
 
         List<Video> videos = List.of(
-                new Video("Video1", "Description1", "Sample Channel", "https://thumbnail1.url", "videoId1", "channelId1", "https://www.youtube.com/watch?v=videoId1"),
-                new Video("Video2", "Description2", "Sample Channel", "https://thumbnail2.url", "videoId2", "channelId2", "https://www.youtube.com/watch?v=videoId2")
+                new Video("Video1", "Description1", "Sample Channel", "https://thumbnail1.url", "videoId1", "channelId1", "https://www.youtube.com/watch?v=videoId1","2024-11-24"),
+                new Video("Video2", "Description2", "Sample Channel", "https://thumbnail2.url", "videoId2", "channelId2", "https://www.youtube.com/watch?v=videoId2","2024-11-24")
         );
         when(mockChannelProfileService.getChannelVideos("channelId", 10)).thenReturn(CompletableFuture.completedFuture(videos));
 
@@ -152,7 +179,7 @@ public class YoutubeControllerTest {
         Http.Request request = mock(Http.Request.class);
         when(request.session()).thenReturn(new Http.Session(Map.of("sessionId", "existingSessionId")));
 
-        List<Video> videos = List.of(new Video("Sample Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId"));
+        List<Video> videos = List.of(new Video("Sample Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId","2024-11-24"));
         when(mockSearchService.searchVideos(anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(videos));
 
         Map<String, Long> wordStats = Map.of("sample", 1L);
@@ -216,13 +243,13 @@ public class YoutubeControllerTest {
 
         // Mock the searchService methods
         List<Video> videos = List.of(
-                new Video("New Session Video", "New Description", "New Channel", "https://newthumbnail.url", "newVideoId", "newChannelId", "https://www.youtube.com/watch?v=newVideoId")
+                new Video("New Session Video", "New Description", "New Channel", "https://newthumbnail.url", "newVideoId", "newChannelId", "https://www.youtube.com/watch?v=newVideoId","2024-11-24")
         );
         when(mockSearchService.searchVideos(anyString(), eq(10))) // 10 is DEFAULT_NUM_OF_RESULTS
                 .thenReturn(CompletableFuture.completedFuture(videos));
 
         // Mock adding to search history (void method)
-        doNothing().when(mockSearchService).addSearchResultToHistory(anyString(), anyString(), anyList());
+        doNothing().when(mockSearchService).addSearchResult(anyString(), anyString(), anyList());
 
         // Mock sentiment calculations
         Map<String, String> individualSentiments = Map.of("video1", "positive", "video2", "negative");
@@ -247,7 +274,7 @@ public class YoutubeControllerTest {
         assertFalse("The new session ID should not be empty", newSessionId.isEmpty());
 
         // Verify that addSearchResultToHistory was called with the new sessionId
-        verify(mockSearchService).addSearchResultToHistory(eq(newSessionId), eq(searchKeyword.toLowerCase()), eq(videos));
+        verify(mockSearchService).addSearchResult(eq(newSessionId), eq(searchKeyword.toLowerCase()), eq(videos));
 
         // Verify that sentiment calculations were called with the new sessionId
         //verify(mockSearchService).calculateOverallSentiment(eq(newSessionId), eq(50));

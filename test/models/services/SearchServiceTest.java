@@ -1,32 +1,36 @@
-/*package models.services;
+package models.services;
 
 import models.entities.Video;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-*/
+import static org.mockito.Mockito.*;
+
 /**
  * Unit tests for the SearchService class. This test suite verifies caching behavior, search history management,
  * and sentiment analysis functionality in SearchService.
  */
-
-/*
 public class SearchServiceTest {
 
     private SearchService searchService;
@@ -40,7 +44,6 @@ public class SearchServiceTest {
      * Sets up the necessary mocks and dependencies before each test.
      * Initializes SearchService with a mock SentimentService, mock YouTubeService, mock HttpClient, and a custom cache.
      */
-/*
     @Before
     public void setUp() throws Exception {
         // Mock dependencies
@@ -56,28 +59,27 @@ public class SearchServiceTest {
         // Initialize test cache
         testCache = new ConcurrentHashMap<>();
 
-        // Create SearchService with injected dependencies
-        searchService = new SearchService(mockSentimentService, mockYouTubeService, testCache,mockHttpClient);
+        // Create SearchService with injected dependencies using the additional constructor
+        searchService = new SearchService(mockSentimentService, mockYouTubeService);
     }
+
     /**
      * Verifies that the @Inject constructor properly initializes the SearchService.
      * This ensures that all dependencies are correctly set and the HttpClient is instantiated.
      */
-/*
     @Test
     public void testInjectConstructor() {
-
         // Arrange
-        SentimentService mockSentimentService = mock(SentimentService.class);
-        YouTubeService mockYouTubeService = mock(YouTubeService.class);
-        ConcurrentHashMap<String, List<Video>> testCache = new ConcurrentHashMap<>();
+        SentimentService mockSentimentServiceLocal = mock(SentimentService.class);
+        YouTubeService mockYouTubeServiceLocal = mock(YouTubeService.class);
+        ConcurrentHashMap<String, List<Video>> testCacheLocal = new ConcurrentHashMap<>();
 
         // Define behavior for mockYouTubeService
-        when(mockYouTubeService.getApiUrl()).thenReturn("https://www.googleapis.com/youtube/v3");
-        when(mockYouTubeService.getApiKey()).thenReturn("FAKE_API_KEY");
+        when(mockYouTubeServiceLocal.getApiUrl()).thenReturn("https://www.googleapis.com/youtube/v3");
+        when(mockYouTubeServiceLocal.getApiKey()).thenReturn("FAKE_API_KEY");
 
         // Act
-        SearchService injectedSearchService = new SearchService(mockSentimentService, mockYouTubeService, testCache);
+        SearchService injectedSearchService = new SearchService(mockSentimentServiceLocal, mockYouTubeServiceLocal);
 
         // Assert
         assertNotNull("SearchService instance should not be null", injectedSearchService);
@@ -87,14 +89,13 @@ public class SearchServiceTest {
                 "https://www.googleapis.com/youtube/v3/search?part=snippet&order=date&type=video&maxResults=",
                 injectedSearchService.getYOUTUBE_SEARCH_URL());
         assertNotNull("HttpClient should be initialized", injectedSearchService.getHttpClient());
-        assertTrue("Cache should be the same instance", injectedSearchService.getCache() == testCache);
+        assertTrue("Cache should be the same instance", injectedSearchService.getCache() == testCacheLocal);
     }
 
     /**
      * Verifies that searchVideos retrieves results from the cache if available.
      * This ensures that the caching mechanism is properly used and prevents unnecessary API calls.
      */
-/*
     @Test
     public void testSearchVideosWithCache() throws Exception {
         String keyword = "test";
@@ -114,14 +115,13 @@ public class SearchServiceTest {
         CompletionStage<List<Video>> videosFuture = searchService.searchVideos(keyword, numOfResults);
 
         // Validate that cached result is returned
-        videosFuture.thenAccept(videos -> {
-            assertNotNull("Videos should not be null", videos);
-            assertEquals("Cached videos should match expected size", expectedVideos.size(), videos.size());
-            for (int i = 0; i < videos.size(); i++) {
-                assertEquals("Titles should match", expectedVideos.get(i).getTitle(), videos.get(i).getTitle());
-                assertEquals("Channel titles should match", expectedVideos.get(i).getChannelTitle(), videos.get(i).getChannelTitle());
-            }
-        }).toCompletableFuture().get();
+        List<Video> videos = videosFuture.toCompletableFuture().get();
+        assertNotNull("Videos should not be null", videos);
+        assertEquals("Cached videos should match expected size", expectedVideos.size(), videos.size());
+        for (int i = 0; i < videos.size(); i++) {
+            assertEquals("Titles should match", expectedVideos.get(i).getTitle(), videos.get(i).getTitle());
+            assertEquals("Channel titles should match", expectedVideos.get(i).getChannelTitle(), videos.get(i).getChannelTitle());
+        }
 
         // Verify that YouTubeService.parseVideos and HttpClient.sendAsync were not called since cache was used
         verify(mockYouTubeService, times(0)).parseVideos(any(JSONArray.class));
@@ -132,7 +132,6 @@ public class SearchServiceTest {
      * Tests that searchVideos performs an API call and populates the cache when no cached data is available.
      * This verifies that the API call is made as expected and that the results are cached for future requests.
      */
-/*
     @Test
     public void testSearchVideosWithoutCache() throws Exception {
         String keyword = "test";
@@ -179,28 +178,27 @@ public class SearchServiceTest {
         CompletionStage<List<Video>> videosFuture = searchService.searchVideos(keyword, numOfResults);
 
         // Validate that the videos match the mocked API response
-        videosFuture.thenAccept(videos -> {
-            assertNotNull("Videos should not be null", videos);
-            assertEquals("API response should match expected size", 2, videos.size());
+        List<Video> videos = videosFuture.toCompletableFuture().get();
+        assertNotNull("Videos should not be null", videos);
+        assertEquals("API response should match expected size", 2, videos.size());
 
-            Video video1 = videos.get(0);
-            assertEquals("Video 1", video1.getTitle());
-            assertEquals("Description 1", video1.getDescription());
-            assertEquals("Channel 1", video1.getChannelTitle());
-            assertEquals("https://thumbnail.url", video1.getThumbnailUrl());
-            assertEquals("videoId1", video1.getVideoId());
-            assertEquals("channelId1", video1.getChannelId());
-            assertEquals("https://www.youtube.com/watch?v=videoId1", video1.getVideoURL());
+        Video video1 = videos.get(0);
+        assertEquals("Video 1", video1.getTitle());
+        assertEquals("Description 1", video1.getDescription());
+        assertEquals("Channel 1", video1.getChannelTitle());
+        assertEquals("https://thumbnail.url", video1.getThumbnailUrl());
+        assertEquals("videoId1", video1.getVideoId());
+        assertEquals("channelId1", video1.getChannelId());
+        assertEquals("https://www.youtube.com/watch?v=videoId1", video1.getVideoURL());
 
-            Video video2 = videos.get(1);
-            assertEquals("Video 2", video2.getTitle());
-            assertEquals("Description 2", video2.getDescription());
-            assertEquals("Channel 2", video2.getChannelTitle());
-            assertEquals("https://thumbnail2.url", video2.getThumbnailUrl());
-            assertEquals("videoId2", video2.getVideoId());
-            assertEquals("channelId2", video2.getChannelId());
-            assertEquals("https://www.youtube.com/watch?v=videoId2", video2.getVideoURL());
-        }).toCompletableFuture().get();
+        Video video2 = videos.get(1);
+        assertEquals("Video 2", video2.getTitle());
+        assertEquals("Description 2", video2.getDescription());
+        assertEquals("Channel 2", video2.getChannelTitle());
+        assertEquals("https://thumbnail2.url", video2.getThumbnailUrl());
+        assertEquals("videoId2", video2.getVideoId());
+        assertEquals("channelId2", video2.getChannelId());
+        assertEquals("https://www.youtube.com/watch?v=videoId2", video2.getVideoURL());
 
         // Verify that the cache was populated
         String cacheKey = keyword + ":" + numOfResults;
@@ -226,7 +224,6 @@ public class SearchServiceTest {
      * Verifies that adding more than MAX_SEARCH_HISTORY search results to a session's search history
      * results in the oldest entries being removed, maintaining the history size within the limit.
      */
-/*
     @Test
     public void testSearchHistoryMaintainsMaxSize() throws Exception {
         String sessionId = "session1";
@@ -239,7 +236,7 @@ public class SearchServiceTest {
             List<Video> videos = List.of(
                     new Video("Video " + i, "Description " + i, "Channel " + i, "https://thumbnail" + i + ".url", "videoId" + i, "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i, "published_date" + i)
             );
-            searchService.addSearchResultToHistory(sessionId, keyword, videos);
+            searchService.addSearchResult(sessionId, keyword, videos);
         }
 
         // Add additional entries to exceed the MAX_SEARCH_HISTORY
@@ -248,7 +245,7 @@ public class SearchServiceTest {
             List<Video> videos = List.of(
                     new Video("Video " + i, "Description " + i, "Channel " + i, "https://thumbnail" + i + ".url", "videoId" + i, "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i, "published_date" + i)
             );
-            searchService.addSearchResultToHistory(sessionId, keyword, videos);
+            searchService.addSearchResult(sessionId, keyword, videos);
         }
 
         // Retrieve the search history
@@ -274,18 +271,17 @@ public class SearchServiceTest {
     }
 
     /**
-     * Verifies that addSearchResultToHistory successfully adds a search result to the session's search history.
+     * Verifies that addSearchResult successfully adds a search result to the session's search history.
      * This ensures that each session's search history is correctly maintained.
      */
-/*
     @Test
-    public void testAddSearchResultToHistory() {
+    public void testAddSearchResult() {
         String sessionId = "session1";
         String keyword = "testKeyword";
         List<Video> videos = List.of(new Video("Test Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId", "published_date"));
 
         // Add result to history
-        searchService.addSearchResultToHistory(sessionId, keyword, videos);
+        searchService.addSearchResult(sessionId, keyword, videos);
 
         // Validate that the history contains the added result
         Map<String, List<Video>> history = searchService.getSearchHistory(sessionId);
@@ -293,255 +289,20 @@ public class SearchServiceTest {
         assertEquals("History videos should match expected", videos, history.get(keyword));
     }
 
-//    /**
-//     * Tests that calculateIndividualSentiments computes sentiment values for each search result in the session history.
-//     * Mocked sentiment values are used to verify that the sentiment analysis functionality works as expected.
-//     */
-//    @Test
-//    public void testCalculateIndividualSentiments() throws Exception {
-//        // Mock sentiment response
-//        when(mockSentimentService.avgSentiment(anyList())).thenReturn(CompletableFuture.completedFuture("positive"));
-//
-//        String sessionId = "session1";
-//        String keyword = "testKeyword";
-//        List<Video> videos = List.of(new Video("Test Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId", "pulished_date"));
-//
-//        // Add result to history for sentiment analysis
-//        searchService.addSearchResultToHistory(sessionId, keyword, videos);
-//
-//        // Calculate individual sentiments
-//        CompletionStage<Map<String, String>> sentimentsFuture = searchService.calculateIndividualSentiments(sessionId);
-//
-//        // Validate the sentiments
-//        sentimentsFuture.thenAccept(sentiments -> {
-//            assertNotNull("Sentiments should not be null", sentiments);
-//            assertEquals("Sentiment should be calculated", "positive", sentiments.get(keyword));
-//        }).toCompletableFuture().get();
-//
-//        // Verify that SentimentService.avgSentiment was called once with the correct parameters
-//        verify(mockSentimentService, times(1)).avgSentiment(videos);
-//    }
-
-//    /**
-//     * Tests that calculateOverallSentiment computes a single sentiment value for all search results in the session history.
-//     * This test verifies the overall sentiment calculation functionality using a mocked response.
-//     */
-//    @Test
-//    public void testCalculateOverallSentiment() throws Exception {
-//        // Mock overall sentiment response
-//        when(mockSentimentService.avgSentiment(anyList())).thenReturn(CompletableFuture.completedFuture("neutral"));
-//
-//        String sessionId = "session1";
-//        String keyword = "testKeyword";
-//        List<Video> videos = List.of(new Video("Test Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId"));
-//
-//        // Add result to history for overall sentiment analysis
-//        searchService.addSearchResultToHistory(sessionId, keyword, videos);
-//
-//        // Calculate overall sentiment
-//        CompletionStage<String> overallSentimentFuture = searchService.calculateOverallSentiment(sessionId, 10);
-//
-//        // Validate overall sentiment result
-//        overallSentimentFuture.thenAccept(overallSentiment -> {
-//            assertNotNull("Overall sentiment should not be null", overallSentiment);
-//            assertEquals("Overall sentiment should match expected", "neutral", overallSentiment);
-//        }).toCompletableFuture().get();
-//
-//        // Verify that SentimentService.avgSentiment was called once with the correct parameters
-//        verify(mockSentimentService, times(1)).avgSentiment(videos);
-//    }
+    /**
+     * Tests that calculateSentiments computes sentiment values for each search result in the session history.
+     * Mocked sentiment values are used to verify that the sentiment analysis functionality works as expected.
+     */
 
     /**
-     * Verifies that clearSearchHistory removes all search results from the session's search history.
-     * This test ensures that the history is correctly cleared when requested.
+     * Tests the updateVideosForKeywordAcrossSessions method to ensure it updates all sessions' search histories correctly.
      */
-    /*
-    @Test
-    public void testClearSearchHistory() {
-        String sessionId = "session1";
-        String keyword = "testKeyword";
-        List<Video> videos = List.of(new Video("Test Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId", "published_date"));
 
-        // Add a result to history
-        searchService.addSearchResultToHistory(sessionId, keyword, videos);
-        assertFalse("History should not be empty before clearing", searchService.getSearchHistory(sessionId).isEmpty());
-
-        // Clear search history
-        searchService.clearSearchHistory(sessionId);
-
-        // Validate that the history is cleared
-        assertTrue("History should be empty after clearing", searchService.getSearchHistory(sessionId).isEmpty());
-    }
-
-    /**
-     * **New Test Method**
-     *
-     * Verifies that getAllVideosForSentiment returns an empty list when the session has no search history.
-     * This ensures that the `if (searchHistory == null)` condition is properly handled.
-     */
-    /*
-    @Test
-    public void testGetAllVideosForSentiment_NoHistory() {
-        String nonExistentSessionId = "nonExistentSession";
-        int limit = 5;
-
-        // Ensure no search history exists for the given sessionId
-        assertTrue("Search history should be empty before test",
-                searchService.getSearchHistory(nonExistentSessionId).isEmpty());
-
-        // Invoke getAllVideosForSentiment
-        List<Video> result = searchService.getAllVideosForSentiment(nonExistentSessionId, limit);
-
-        // Assert that the returned list is empty
-        assertNotNull("Result should not be null", result);
-        assertTrue("Result should be empty for non-existent sessionId", result.isEmpty());
-    }
-
-    /**
-     * **Optional Additional Test Method**
-     *
-     * Verifies that getAllVideosForSentiment correctly retrieves videos up to the specified limit when the session has search history.
-     * This indirectly covers the non-null path of the `if` statement.
-     */
-    /*
-    @Test
-    public void testGetAllVideosForSentiment_WithHistory() {
-        String sessionId = "sessionWithHistory";
-        int limit = 5;
-
-        // Add multiple search results to the session's history
-        for (int i = 1; i <= 10; i++) {
-            String keyword = "keyword" + i;
-            List<Video> videos = List.of(
-                    new Video("Video " + i, "Description " + i, "Channel " + i,
-                            "https://thumbnail" + i + ".url", "videoId" + i,
-                            "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i, "published_date" + i)
-            );
-            searchService.addSearchResultToHistory(sessionId, keyword, videos);
-        }
-
-        // Invoke getAllVideosForSentiment
-        List<Video> result = searchService.getAllVideosForSentiment(sessionId, limit);
-
-        // Assert that the returned list contains the correct number of videos
-        assertNotNull("Result should not be null", result);
-        assertEquals("Result size should match the limit", limit, result.size());
-
-        // Optionally, verify the content of the videos
-        for (int i = 0; i < limit; i++) {
-            Video video = result.get(i);
-            assertEquals("Video title should match", "Video " + (i + 1), video.getTitle());
-        }
-    }
-
-    /**
-     * Tests removeOldestEntry to confirm that the oldest entry is removed when history size is at the maximum limit.
-     */
-    /*
-
-    @Test
-    public void testRemoveOldestEntry() {
-        // Set up a LinkedHashMap with a size at the limit
-        LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
-        for (int i = 1; i <= 10; i++) { // Assuming MAX_SEARCH_HISTORY is 10
-            searchHistory.put("keyword" + i, List.of(
-                    new Video("Video " + i, "Description " + i, "Channel " + i,
-                            "https://thumbnail" + i + ".url", "videoId" + i,
-                            "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i, "published_date" + i)
-            ));
-        }
-
-        // Call the removeOldestEntry helper method
-        searchService.removeOldestEntry(searchHistory);
-
-        // Verify that the oldest entry was removed
-        assertEquals("History size should be one less after removal", 9, searchHistory.size());
-        assertFalse("Oldest entry (keyword1) should be removed", searchHistory.containsKey("keyword1"));
-    }
 
     /**
      * Verifies removeOldestEntry's behavior by checking direct state changes to ensure it removes the oldest entry.
      */
-    /*
-    @Test
-    public void testRemoveOldestEntryDirectStateVerification() {
-        // Create a LinkedHashMap and fill it to the maximum capacity
-        LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
-        for (int i = 1; i <= 10; i++) { // Assuming MAX_SEARCH_HISTORY is 10
-            searchHistory.put("keyword" + i, List.of(
-                    new Video("Video " + i, "Description " + i, "Channel " + i,
-                            "https://thumbnail" + i + ".url", "videoId" + i,
-                            "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i, "published_date" + i)
-            ));
-        }
 
-        // Confirm that "keyword1" is the first entry and exists before removal
-        assertTrue("The first entry should be 'keyword1' before removal", searchHistory.containsKey("keyword1"));
-
-        // Call the removeOldestEntry method directly
-        searchService.removeOldestEntry(searchHistory);
-
-        // Verify that the oldest entry ("keyword1") was removed
-        assertEquals("History size should be reduced by 1 after removal", 9, searchHistory.size());
-        assertFalse("Oldest entry (keyword1) should be removed", searchHistory.containsKey("keyword1"));
-
-        // Check that the next expected oldest entry ("keyword2") is now present as the first entry
-        assertTrue("The next entry 'keyword2' should remain after removal", searchHistory.containsKey("keyword2"));
-    }
-
-    /**
-     * Tests removeOldestEntry on an empty search history, confirming no exceptions and no changes to history state.
-     */
-    /*
-    @Test
-    public void testRemoveOldestEntryWithEmptyHistory() {
-        // Create an empty LinkedHashMap
-        LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
-
-        // Call removeOldestEntry on the empty history
-        searchService.removeOldestEntry(searchHistory);
-
-        // Verify that the history is still empty after calling the method
-        assertTrue("History should remain empty after calling removeOldestEntry on an empty map", searchHistory.isEmpty());
-    }
-
-    /**
-     * Tests the fetchNewVideos method to ensure it returns new videos not present in processedVideoIds.
-     */
-    /*
-    @Test
-    public void testFetchNewVideos() throws Exception {
-        String keyword = "testKeyword";
-        int numOfResults = 2;
-        Set<String> processedVideoIds = new HashSet<>();
-
-        // Call fetchNewVideos
-        CompletionStage<List<Video>> newVideosFuture = searchService.fetchNewVideos(keyword, numOfResults, processedVideoIds);
-
-        // Wait for the future to complete
-        List<Video> newVideos = newVideosFuture.toCompletableFuture().get();
-
-        // Verify that newVideos are returned
-        assertNotNull("New videos should not be null", newVideos);
-        assertFalse("New videos should not be empty", newVideos.isEmpty());
-        assertEquals("Should return the expected number of new videos", numOfResults, newVideos.size());
-
-        // Verify that processedVideoIds has been updated
-        assertEquals("Processed video IDs should be updated", numOfResults, processedVideoIds.size());
-
-        // Ensure that the video IDs are unique
-        Set<String> videoIds = new HashSet<>();
-        for (Video video : newVideos) {
-            assertNotNull("Video ID should not be null", video.getVideoId());
-            videoIds.add(video.getVideoId());
-        }
-        assertEquals("Video IDs should be unique", numOfResults, videoIds.size());
-    }
-
-    /**
-     * Tests the calculateSentiments method to ensure it calculates sentiments for each keyword in the session's search history.
-     */
-    /*
     @Test
     public void testCalculateSentiments() throws Exception {
         String sessionId = "session1";
@@ -554,8 +315,8 @@ public class SearchServiceTest {
         String keyword2 = "keyword2";
         List<Video> videos1 = List.of(new Video("Video1", "Description1", "Channel1", "Thumbnail1", "videoId1", "channelId1", "VideoURL1", "publishedAt1"));
         List<Video> videos2 = List.of(new Video("Video2", "Description2", "Channel2", "Thumbnail2", "videoId2", "channelId2", "VideoURL2", "publishedAt2"));
-        searchService.addSearchResultToHistory(sessionId, keyword1, videos1);
-        searchService.addSearchResultToHistory(sessionId, keyword2, videos2);
+        searchService.addSearchResult(sessionId, keyword1, videos1);
+        searchService.addSearchResult(sessionId, keyword2, videos2);
 
         // Call calculateSentiments
         CompletionStage<Map<String, String>> sentimentsFuture = searchService.calculateSentiments(sessionId);
@@ -577,7 +338,6 @@ public class SearchServiceTest {
     /**
      * Tests the updateVideosForKeywordAcrossSessions method to ensure it updates all sessions' search histories correctly.
      */
-    /*
     @Test
     public void testUpdateVideosForKeyword() {
         // Prepare sessions and search histories
@@ -597,8 +357,8 @@ public class SearchServiceTest {
             }
         };
 
-        searchService.addSearchResultToHistory(sessionId1, keyword, existingVideosSession1);
-        searchService.addSearchResultToHistory(sessionId2, keyword, existingVideosSession2);
+        searchService.addSearchResult(sessionId1, keyword, existingVideosSession1);
+        searchService.addSearchResult(sessionId2, keyword, existingVideosSession2);
 
         // New videos to be added
         List<Video> newVideos = new ArrayList<>(){
@@ -637,7 +397,6 @@ public class SearchServiceTest {
     /**
      * Tests the isNewVideo method indirectly by checking the behavior through fetchNewVideos.
      */
-    /*
     @Test
     public void testIsNewVideo() throws Exception {
         Video video = new Video();
@@ -663,7 +422,6 @@ public class SearchServiceTest {
     /**
      * Tests the generateMockVideos method to ensure it generates the expected number of mock videos with unique IDs.
      */
-    /*
     @Test
     public void testGenerateMockVideos() throws Exception {
         String keyword = "testKeyword";
@@ -693,5 +451,232 @@ public class SearchServiceTest {
         assertEquals("Video IDs should be unique", numOfResults, videoIds.size());
     }
 
+    /**
+     * Verifies that removeOldestEntry removes the oldest entry when the history size exceeds the limit.
+     */
+    @Test
+    public void testRemoveOldestEntry() {
+        // Set up a LinkedHashMap with a size at the limit
+        LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
+        for (int i = 1; i <= 10; i++) { // Assuming MAX_SEARCH_HISTORY is 10
+            searchHistory.put("keyword" + i, List.of(
+                    new Video("Video " + i, "Description " + i, "Channel " + i,
+                            "https://thumbnail" + i + ".url", "videoId" + i,
+                            "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i, "published_date" + i)
+            ));
+        }
+
+        // Call the removeOldestEntry helper method
+        searchService.removeOldestEntry(searchHistory);
+
+        // Verify that the oldest entry was removed
+        assertEquals("History size should be one less after removal", 9, searchHistory.size());
+        assertFalse("Oldest entry (keyword1) should be removed", searchHistory.containsKey("keyword1"));
+    }
+
+    /**
+     * Verifies removeOldestEntry's behavior by checking direct state changes to ensure it removes the oldest entry.
+     */
+    @Test
+    public void testRemoveOldestEntryDirectStateVerification() {
+        // Create a LinkedHashMap and fill it to the maximum capacity
+        LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
+        for (int i = 1; i <= 10; i++) { // Assuming MAX_SEARCH_HISTORY is 10
+            searchHistory.put("keyword" + i, List.of(
+                    new Video("Video " + i, "Description " + i, "Channel " + i,
+                            "https://thumbnail" + i + ".url", "videoId" + i,
+                            "channelId" + i, "https://www.youtube.com/watch?v=videoId" + i, "published_date" + i)
+            ));
+        }
+
+        // Confirm that "keyword1" is the first entry and exists before removal
+        assertTrue("The first entry should be 'keyword1' before removal", searchHistory.containsKey("keyword1"));
+
+        // Call the removeOldestEntry method directly
+        searchService.removeOldestEntry(searchHistory);
+
+        // Verify that the oldest entry ("keyword1") was removed
+        assertEquals("History size should be reduced by 1 after removal", 9, searchHistory.size());
+        assertFalse("Oldest entry (keyword1) should be removed", searchHistory.containsKey("keyword1"));
+
+        // Check that the next expected oldest entry ("keyword2") is now present as the first entry
+        assertTrue("The next entry 'keyword2' should remain after removal", searchHistory.containsKey("keyword2"));
+    }
+
+    /**
+     * Tests removeOldestEntry on an empty search history, confirming no exceptions and no changes to history state.
+     */
+    @Test
+    public void testRemoveOldestEntryWithEmptyHistory() {
+        // Create an empty LinkedHashMap
+        LinkedHashMap<String, List<Video>> searchHistory = new LinkedHashMap<>();
+
+        // Call removeOldestEntry on the empty history
+        searchService.removeOldestEntry(searchHistory);
+
+        // Verify that the history is still empty after calling the method
+        assertTrue("History should remain empty after calling removeOldestEntry on an empty map", searchHistory.isEmpty());
+    }
+
+    /**
+     * Tests the fetchNewVideos method to ensure it returns new videos not present in processedVideoIds.
+     */
+    @Test
+    public void testFetchNewVideos() throws Exception {
+        String keyword = "testKeyword";
+        int numOfResults = 2;
+        Set<String> processedVideoIds = new HashSet<>();
+
+        // Configure isTestingMode to false to test actual fetchVideos behavior
+        // Using reflection to set private field isTestingMode to false
+        Method setTestingModeMethod = SearchService.class.getDeclaredMethod("setIsTestingMode", boolean.class);
+        setTestingModeMethod.setAccessible(true);
+        setTestingModeMethod.invoke(searchService, false);
+
+        // Define the expected API URL
+        String encodedKeyword = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
+        String expectedApiUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&order=date&type=video&maxResults="
+                + numOfResults + "&q=" + encodedKeyword + "&key=FAKE_API_KEY";
+
+        // Create a mock JSON response that includes the "items" array
+        String mockJsonResponse = "{ \"items\": [ " +
+                "{ \"id\": { \"videoId\": \"videoId1\" }, " +
+                "\"snippet\": { " +
+                "\"title\": \"Video 1\", " +
+                "\"description\": \"Description 1\", " +
+                "\"channelTitle\": \"Channel 1\", " +
+                "\"thumbnails\": { \"default\": { \"url\": \"https://thumbnail.url\" } }, " +
+                "\"channelId\": \"channelId1\" " +
+                "} }, " +
+                "{ \"id\": { \"videoId\": \"videoId2\" }, " +
+                "\"snippet\": { " +
+                "\"title\": \"Video 2\", " +
+                "\"description\": \"Description 2\", " +
+                "\"channelTitle\": \"Channel 2\", " +
+                "\"thumbnails\": { \"default\": { \"url\": \"https://thumbnail2.url\" } }, " +
+                "\"channelId\": \"channelId2\" " +
+                "} } " +
+                "] }";
+
+        // Configure the mockHttpResponse to return the mock JSON
+        when(mockHttpResponse.body()).thenReturn(mockJsonResponse);
+        when(mockHttpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(CompletableFuture.completedFuture(mockHttpResponse));
+
+        // Configure the mockYouTubeService to return expectedVideos when parseVideos is called with any JSONArray
+        List<Video> expectedVideos = List.of(
+                new Video("Video 1", "Description 1", "Channel 1", "https://thumbnail.url", "videoId1", "channelId1", "https://www.youtube.com/watch?v=videoId1", "published_date1"),
+                new Video("Video 2", "Description 2", "Channel 2", "https://thumbnail2.url", "videoId2", "channelId2", "https://www.youtube.com/watch?v=videoId2", "published_date2")
+        );
+        when(mockYouTubeService.parseVideos(any(JSONArray.class))).thenReturn(expectedVideos);
+
+        // Call fetchNewVideos, which internally calls searchVideos
+        CompletionStage<List<Video>> newVideosFuture = searchService.fetchNewVideos(keyword, numOfResults, processedVideoIds);
+
+        // Wait for the future to complete
+        List<Video> newVideos = newVideosFuture.toCompletableFuture().get();
+
+        // Verify that newVideos are returned
+        assertNotNull("New videos should not be null", newVideos);
+        assertFalse("New videos should not be empty", newVideos.isEmpty());
+        assertEquals("Should return the expected number of new videos", numOfResults, newVideos.size());
+
+        // Verify that processedVideoIds has been updated
+        assertEquals("Processed video IDs should be updated", numOfResults, processedVideoIds.size());
+
+        // Ensure that the video IDs are unique and not already processed
+        Set<String> videoIds = new HashSet<>();
+        for (Video video : newVideos) {
+            assertNotNull("Video ID should not be null", video.getVideoId());
+            assertTrue("Video ID should be unique and new", videoIds.add(video.getVideoId()));
+            assertTrue("Video ID should be in processedVideoIds", processedVideoIds.contains(video.getVideoId()));
+        }
+
+        // Verify that the cache was populated by searchVideos
+        String cacheKey = keyword + ":" + numOfResults;
+        assertTrue("Cache should contain the key after search", testCache.containsKey(cacheKey));
+        List<Video> cachedVideos = testCache.get(cacheKey);
+        assertEquals("Cached videos should match expected size", 2, cachedVideos.size());
+
+        // Verify that YouTubeService.parseVideos was called once with the correct JSONArray
+        ArgumentCaptor<JSONArray> jsonArrayCaptor = ArgumentCaptor.forClass(JSONArray.class);
+        verify(mockYouTubeService, times(1)).parseVideos(jsonArrayCaptor.capture());
+        assertEquals("JSONArray should have expected number of items", 2, jsonArrayCaptor.getValue().length());
+
+        // Verify that HttpClient.sendAsync was called once with the correct URI
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(mockHttpClient, times(1)).sendAsync(requestCaptor.capture(), any(HttpResponse.BodyHandler.class));
+
+        HttpRequest capturedRequest = requestCaptor.getValue();
+        assertEquals("HTTP method should be GET", "GET", capturedRequest.method());
+        assertEquals("URI should match expected", URI.create(expectedApiUrl), capturedRequest.uri());
+    }
+
+    /**
+     * Tests that calculateOverallSentiment computes a single sentiment value for all search results in the session history.
+     * This test verifies the overall sentiment calculation functionality using a mocked response.
+     */
+    @Test
+    public void testCalculateOverallSentiment() throws Exception {
+        // Mock overall sentiment response
+        when(mockSentimentService.avgSentiment(anyList())).thenReturn(CompletableFuture.completedFuture("neutral"));
+
+        String sessionId = "session1";
+        String keyword = "testKeyword";
+        List<Video> videos = List.of(new Video("Test Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId","2024-02-02"));
+
+        // Add result to history for overall sentiment analysis
+        searchService.addSearchResult(sessionId, keyword, videos);
+
+        // Call calculateSentiments (assuming calculateOverallSentiment was renamed to calculateSentiments)
+        CompletionStage<Map<String, String>> sentimentsFuture = searchService.calculateSentiments(sessionId);
+
+        // Wait for future to complete
+        Map<String, String> sentiments = sentimentsFuture.toCompletableFuture().get();
+
+        // Verify that overall sentiment is calculated
+        assertNotNull("Sentiments should not be null", sentiments);
+        assertEquals("Should have sentiments for each keyword", 1, sentiments.size());
+        assertEquals("Sentiment should be 'neutral' for keyword", "neutral", sentiments.get(keyword));
+
+        // Verify that avgSentiment was called once with the correct parameters
+        verify(mockSentimentService, times(1)).avgSentiment(videos);
+    }
+
+    /**
+     * Tests that clearSearchHistory removes all search results from the session's search history.
+     * This test ensures that the history is correctly cleared when requested.
+     */
+    @Test
+    public void testClearSearchHistory() {
+        String sessionId = "session1";
+        String keyword = "testKeyword";
+        List<Video> videos = List.of(new Video("Test Video", "Description", "Channel", "https://thumbnail.url", "videoId", "channelId", "https://www.youtube.com/watch?v=videoId", "published_date"));
+
+        // Add a result to history
+        searchService.addSearchResult(sessionId, keyword, videos);
+        assertFalse("History should not be empty before clearing", searchService.getSearchHistory(sessionId).isEmpty());
+
+        // Clear search history
+        searchService.clearSearchHistory(sessionId);
+
+        // Validate that the history is cleared
+        assertTrue("History should be empty after clearing", searchService.getSearchHistory(sessionId).isEmpty());
+    }
+
+    /**
+     * **New Test Method**
+     *
+     * Verifies that getAllVideosForSentiment returns an empty list when the session has no search history.
+     * This ensures that the `if (searchHistory == null)` condition is properly handled.
+     */
+
+
+    /**
+     * **Optional Additional Test Method**
+     *
+     * Verifies that getAllVideosForSentiment correctly retrieves videos up to the specified limit when the session has search history.
+     * This indirectly covers the non-null path of the `if` statement.
+     */
+
 }
-*/
