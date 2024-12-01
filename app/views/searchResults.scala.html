@@ -12,7 +12,7 @@
 
 @import java.util.Collections
 @import scala.jdk.CollectionConverters._
-@(searchHistory: java.util.Map[String, java.util.List[entities.Video]], overallSentiment: String, individualSentiments: Map[String, String], keyword: String)
+@(searchHistory: java.util.Map[String, java.util.List[entities.Video]], overallSentiment: Map[String, String], individualSentiments: Map[String, String], keyword: String)
 
 @main("YT Lytics") {
 <style>
@@ -66,14 +66,6 @@
         background-color: #b71c1c; /* Hover */
     }
 
-    /* SearchResult results */
-    h1 + h1 {
-        margin-top: 20px;
-        font-size: 1.5em;
-        color: #666;
-        text-align: center;
-    }
-
     /* Sentiment display */
     .sentiment {
         font-size: 1.2em;
@@ -109,7 +101,7 @@
     li h3 {
         margin: 0;
         font-size: 1.2em;
-        color: #333; /* Standard dark text color */
+        color: #333;
     }
     li a {
         text-decoration: none;
@@ -122,46 +114,6 @@
     li p strong {
         color: #444;
     }
-
-
-
-    #new-videos-section h2 {
-        font-size: 1.5em;
-        color: #d32f2f;
-        text-align: center;
-        margin-bottom: 10px;
-    }
-
-    #separator {
-        width: 80%;
-        max-width: 1000px;
-        margin: 20px auto;
-        border-bottom: 2px solid #ccc;
-    }
-
-    /* Adjust existing ul styling */
-    ul.video-list {
-        list-style-type: none;
-        padding: 0;
-        width: 100%;
-        margin: 0 auto;
-    }
-
-    #new-videos-section .video-item {
-        background-color: #e3f2fd; /* Light blue background for new videos */
-    }
-
-    #new-videos-section h2 {
-        color: #1976d2; /* Darker blue color for the header */
-    }
-
-    .new-video-item {
-        background-color: #e3f2fd; /* Light blue background */
-    }
-
-
-
-
 </style>
 
 <h1>YT Lytics - Search Results</h1>
@@ -171,25 +123,17 @@
     <button type="submit">Search</button>
 </form>
 
-<script type="text/javascript">
-        var searchKeywords = @Html(play.libs.Json.stringify(play.libs.Json.toJson(searchHistory.keySet().asScala)));
-
-
-
-</script>
-
 @for((key, videos) <- searchHistory.asScala.toSeq.reverse) {
 @defining(key.replaceAll("[^a-zA-Z0-9]", "_")) { safeKey =>
 <h2>Search Results for '@key'</h2>
-<div class="sentiment">
-    Sentiment for '@key': @individualSentiments.getOrElse(key, "N/A")
+<div class="sentiment" id="sentiment-@safeKey">
+    Sentiment for '@key': @overallSentiment.getOrElse(key, "N/A")
 </div>
 
 <div>
     <a href="@routes.YoutubeController.wordStats(key)" target="_blank">Search Stats</a>
 </div>
 
-<!-- Combined Videos Section for this keyword -->
 <ul class="video-list" id="video-list-@safeKey">
     @for(video <- videos.asScala) {
     <li class="video-item">
@@ -207,10 +151,120 @@
         </div>
     </li>
     }
-    <!-- New videos will be appended here via JavaScript -->
 </ul>
 <hr/>
 }
 }
 
+<script type="text/javascript">
+    var searchKeywords = @Html(play.libs.Json.stringify(play.libs.Json.toJson(searchHistory.keySet().asScala)));
+
+    var socket = new WebSocket('ws://' + window.location.host + '/ws');
+
+    socket.onopen = function() {
+        console.log('WebSocket connection established.');
+        socket.send(JSON.stringify({ type: 'init', keywords: searchKeywords }));
+        document.getElementById('status').textContent = 'Connected to WebSocket.';
+    };
+
+    socket.onmessage = function(event) {
+        var data = JSON.parse(event.data);
+
+        if (data.type === 'video') {
+            var keyword = data.keyword;
+            var video = data;
+            var safeKey = keyword.replace(/[^a-zA-Z0-9]/g, '_');
+
+            var videoList = document.getElementById('video-list-' + safeKey);
+
+            if (!videoList) {
+                createKeywordSection(keyword, safeKey);
+                videoList = document.getElementById('video-list-' + safeKey);
+            }
+
+            var li = document.createElement('li');
+            li.classList.add('video-item');
+
+            var img = document.createElement('img');
+            img.src = video.thumbnailUrl;
+            img.alt = 'Thumbnail';
+
+            var div = document.createElement('div');
+
+            var h3 = document.createElement('h3');
+            var a = document.createElement('a');
+            a.href = 'https://www.youtube.com/watch?v=' + video.videoId;
+            a.target = '_blank';
+            a.textContent = video.title;
+            h3.appendChild(a);
+
+            var p = document.createElement('p');
+            p.textContent = video.description;
+
+            var small = document.createElement('small');
+            small.innerHTML = 'Channel: <a href="/channelProfile/' + video.channelId + '" target="_blank">' + video.channelTitle + '</a>';
+
+            var tagsLink = document.createElement('p');
+            var tagsA = document.createElement('a');
+            tagsA.href = '/tags/' + video.videoId;
+            tagsA.target = '_blank';
+            tagsA.textContent = 'Tags';
+            tagsLink.appendChild(tagsA);
+
+            div.appendChild(h3);
+            div.appendChild(p);
+            div.appendChild(small);
+            div.appendChild(tagsLink);
+
+            li.appendChild(img);
+            li.appendChild(div);
+
+            videoList.insertBefore(li, videoList.firstChild);
+        } else if (data.type === 'sentiment') {
+            var keyword = data.keyword;
+            var sentiment = data.sentiment;
+            var safeKey = keyword.replace(/[^a-zA-Z0-9]/g, '_');
+
+            var sentimentElement = document.getElementById('sentiment-' + safeKey);
+            if (sentimentElement) {
+                sentimentElement.textContent = 'Sentiment for \'' + keyword + '\': ' + sentiment;
+            }
+        } else if (data.type === 'heartbeat') {
+            console.log('Received heartbeat from server.');
+        }
+    };
+
+    socket.onclose = function() {
+        console.log('WebSocket connection closed.');
+        document.getElementById('status').textContent = 'WebSocket connection closed.';
+    };
+
+    function createKeywordSection(keyword, safeKey) {
+        var h2 = document.createElement('h2');
+        h2.textContent = "Search Results for '" + keyword + "'";
+        document.body.appendChild(h2);
+
+        var sentimentDiv = document.createElement('div');
+        sentimentDiv.className = 'sentiment';
+        sentimentDiv.id = 'sentiment-' + safeKey;
+        sentimentDiv.textContent = "Sentiment for '" + keyword + "': N/A";
+        document.body.appendChild(sentimentDiv);
+
+        var statsDiv = document.createElement('div');
+        var statsLink = document.createElement('a');
+        statsLink.href = '/wordStats/' + encodeURIComponent(keyword);
+        statsLink.target = '_blank';
+        statsLink.textContent = 'Search Stats';
+        statsDiv.appendChild(statsLink);
+        document.body.appendChild(statsDiv);
+
+        var ul = document.createElement('ul');
+        ul.className = 'video-list';
+        ul.id = 'video-list-' + safeKey;
+        document.body.appendChild(ul);
+
+        var hr = document.createElement('hr');
+        document.body.appendChild(hr);
+    }
+</script>
 }

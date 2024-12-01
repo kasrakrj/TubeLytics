@@ -3,6 +3,7 @@ package models.services;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -162,4 +163,19 @@ public class SentimentService {
 
         return result;
     }
+    public CompletionStage<Map<String, String>> analyzeVideos(List<Video> videos) {
+        List<CompletionStage<Map.Entry<String, String>>> sentimentStages = videos.stream()
+                .map(video -> analyzeAsync(video.getDescription())
+                        .thenApply(sentiment -> Map.entry(video.getVideoId(), sentiment)))
+                .collect(Collectors.toList());
+
+        // Combine all CompletionStages into a single CompletionStage of the final map
+        return CompletableFuture.allOf(sentimentStages.toArray(new CompletableFuture[0]))
+                .thenApply(v -> sentimentStages.stream()
+                        .map(CompletionStage::toCompletableFuture)
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+                );
+    }
+
 }

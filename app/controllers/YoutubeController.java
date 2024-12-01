@@ -1,9 +1,6 @@
 package controllers;
 
-import actors.ChannelProfileActor;
-import actors.SentimentActor;
-import actors.UserActor;
-import actors.WordStatActor;
+import actors.*;
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
 import akka.stream.Materializer;
@@ -18,8 +15,6 @@ import play.mvc.WebSocket;
 import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-
-import static models.services.GeneralService.searchHelper;
 import static models.services.SessionService.*;
 
 /**
@@ -39,7 +34,6 @@ public class YoutubeController extends Controller {
     private final ActorSystem actorSystem;
     private final Materializer materializer;
 
-    // Actor reference to interact with SentimentActor
     private final ActorRef sentimentActor;
     private final ActorRef channelProfileActor;
     private final ActorRef wordStatActor;
@@ -75,9 +69,7 @@ public class YoutubeController extends Controller {
         this.actorSystem = actorSystem;
         this.materializer = materializer;
         this.youTubeService = youTubeService;
-
-        // Initialize SentimentActor
-        this.sentimentActor = actorSystem.actorOf(SentimentActor.props(sentimentService, httpExecutionContext));
+        this.sentimentActor = actorSystem.actorOf(SentimentActor.props(sentimentService), "sentimentActor");
         this.channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(this.youTubeService), "channelProfileActor");
         this.wordStatActor = actorSystem.actorOf(WordStatActor.props(this.searchService), "wordStatActor");
     }
@@ -104,7 +96,6 @@ public class YoutubeController extends Controller {
     public CompletionStage<Result> tags(String videoID, Http.Request request) {
         return GeneralService.tagHelper(tagsService, videoID, request);
     }
-
     /**
      * Performs a video search based on a keyword, storing search history and calculating sentiment.
      *
@@ -114,7 +105,7 @@ public class YoutubeController extends Controller {
      * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
      */
     public CompletionStage<Result> search(String keyword, Http.Request request) {
-        return searchHelper(searchService, keyword, request);
+        return GeneralService.searchHelper(searchService, sentimentActor, keyword, request);
     }
 
     /**
@@ -146,7 +137,7 @@ public class YoutubeController extends Controller {
         return WebSocket.Text.accept(request -> {
             String sessionId = getSessionIdByHeader(request);
             return ActorFlow.actorRef(
-                    out -> UserActor.props(out, searchService, sessionId),
+                    out -> UserActor.props(out, searchService, sentimentActor, sessionId),
                     actorSystem,
                     materializer
             );

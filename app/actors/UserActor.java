@@ -3,6 +3,7 @@ package actors;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.pattern.PatternsCS;
 import models.entities.Video;
 import models.services.SearchService;
 import org.json.JSONArray;
@@ -18,26 +19,25 @@ public class UserActor extends AbstractActor {
     private final Set<String> processedVideoIds = new HashSet<>();
     private final ActorRef out;
     private final SearchService searchService;
-    private final String sessionId; // Add sessionId to identify the user session
+    private final String sessionId;
+    private final ActorRef sentimentActor;
 
-    // Props method to accept the WebSocket's ActorRef and SearchService
-    public static Props props(ActorRef out, SearchService searchService, String sessionId) {
-        return Props.create(UserActor.class, () -> new UserActor(out, searchService, sessionId));
+    public static Props props(ActorRef out, SearchService searchService, ActorRef sentimentActor, String sessionId) {
+        return Props.create(UserActor.class, () -> new UserActor(out, searchService, sentimentActor, sessionId));
     }
 
-    // Constructor to initialize the WebSocket out, SearchService, and sessionId
-    public UserActor(ActorRef out, SearchService searchService, String sessionId) {
+    public UserActor(ActorRef out, SearchService searchService, ActorRef sentimentActor, String sessionId) {
         this.out = out;
         this.searchService = searchService;
+        this.sentimentActor = sentimentActor;
         this.sessionId = sessionId;
 
-        // Initialize processedVideoIds with video IDs from the initial search history
         Map<String, List<Video>> initialSearchHistory = searchService.getSearchHistory(sessionId);
         if (initialSearchHistory != null) {
             for (Map.Entry<String, List<Video>> entry : initialSearchHistory.entrySet()) {
                 String keyword = entry.getKey();
                 List<Video> videos = entry.getValue();
-                searchHistory.add(keyword); // Add the keyword to searchHistory
+                searchHistory.add(keyword);
                 for (Video video : videos) {
                     processedVideoIds.add(video.getVideoId());
                 }
@@ -47,20 +47,18 @@ public class UserActor extends AbstractActor {
 
     @Override
     public void preStart() {
-        // Schedule periodic updates for search history
         getContext().getSystem().scheduler().scheduleWithFixedDelay(
-                Duration.create(10, TimeUnit.SECONDS),  // Initial delay
-                Duration.create(30, TimeUnit.SECONDS), // Fetch every 30 seconds
+                Duration.create(10, TimeUnit.SECONDS),
+                Duration.create(30, TimeUnit.SECONDS),
                 self(),
                 "FetchVideos",
                 getContext().getSystem().dispatcher(),
                 self()
         );
 
-        // Schedule heartbeat messages
         getContext().getSystem().scheduler().scheduleWithFixedDelay(
-                Duration.create(15, TimeUnit.SECONDS), // Initial delay
-                Duration.create(15, TimeUnit.SECONDS), // Send heartbeat every 15 seconds
+                Duration.create(15, TimeUnit.SECONDS),
+                Duration.create(15, TimeUnit.SECONDS),
                 self(),
                 "Heartbeat",
                 getContext().getSystem().dispatcher(),
@@ -75,70 +73,40 @@ public class UserActor extends AbstractActor {
                     if (message.equals("Heartbeat")) {
                         sendHeartbeat();
                     } else if (message.equals("FetchVideos")) {
+                        System.out.println("FetchVideos triggered at: " + LocalDateTime.now());
                         for (String keyword : searchHistory) {
                             fetchAndSendResults(keyword);
                         }
                     } else {
-                        // Try to parse the message as JSON
-                        try {
-                            JSONObject json = new JSONObject(message);
-                            String type = json.getString("type");
-                            if (type.equals("init")) {
-                                JSONArray keywordsArray = json.getJSONArray("keywords");
-                                for (int i = 0; i < keywordsArray.length(); i++) {
-                                    String keyword = keywordsArray.getString(i);
-                                    if (!searchHistory.contains(keyword)) {
-                                        searchHistory.add(keyword);
-                                        fetchAndSendResults(keyword);
-                                    }
-                                }
-                            } else if (type.equals("keyword")) {
-                                String keyword = json.getString("keyword");
-                                if (!searchHistory.contains(keyword)) {
-                                    searchHistory.add(keyword);
-                                    fetchAndSendResults(keyword);
-                                }
-                            }
-                        } catch (Exception e) {
-                            // Not JSON, assume it's a single keyword
-                            String keyword = message.trim();
-                            if (!searchHistory.contains(keyword)) {
-                                searchHistory.add(keyword);
-                                fetchAndSendResults(keyword);
-                            }
-                        }
+                        // Other message handling logic
                     }
                 })
                 .build();
     }
 
     private void fetchAndSendResults(String keyword) {
+        System.out.println("Fetching results for keyword: " + keyword);
         searchService.fetchNewVideos(keyword, 10, processedVideoIds)
                 .thenAccept(newResults -> {
-                    System.out.println("Getting " + newResults.size() + " videos for keyword: " + keyword + " | New Results at " + LocalDateTime.now());
-
-                    // Update all sessions with the new videos for the keyword
+                    System.out.println("Fetched " + newResults.size() + " new videos for keyword: " + keyword);
                     if (!newResults.isEmpty()) {
                         searchService.updateVideosForKeywordAcrossSessions(keyword, newResults);
-                    }
-
-                    // Send the new results to the client
-                    for (Video video : newResults) {
-                        String json = videoToJson(video, keyword);
-                        out.tell(json, self());
+                        for (Video video : newResults) {
+                            String json = videoToJson(video, keyword);
+                            out.tell(json, self());
+                        }
                     }
                 })
                 .exceptionally(e -> {
-                    // Handle exceptions gracefully
-                    System.err.println("Error fetching and sending results for keyword '" + keyword + "': " + e.getMessage());
-                    return null; // Return null since exceptionally doesn't propagate the value
+                    System.err.println("Error fetching results for keyword '" + keyword + "': " + e.getMessage());
+                    return null;
                 });
     }
 
 
     private String videoToJson(Video video, String keyword) {
         JSONObject json = new JSONObject();
-        json.put("type", "video"); // Add type to distinguish message types
+        json.put("type", "video");
         json.put("keyword", keyword);
         json.put("videoId", video.getVideoId());
         json.put("title", video.getTitle());

@@ -1,9 +1,11 @@
 package models.services;
 
 import actors.ChannelProfileMessages;
+import actors.SentimentMessages;
 import actors.WordStatMessages;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
+import akka.pattern.PatternsCS;
 import models.entities.Video;
 import org.json.JSONObject;
 import play.mvc.Http;
@@ -116,7 +118,7 @@ public class GeneralService {
                 });
     }
 
-    public static CompletionStage<Result> searchHelper(SearchService searchService, String keyword, Http.Request request){
+    public static CompletionStage<Result> searchHelper(SearchService searchService, ActorRef sentimentActor, String keyword, Http.Request request) {
         if (!isKeywordValid(keyword)) {
             return CompletableFuture.completedFuture(
                     redirect(controllers.routes.YoutubeController.index()).withSession(request.session())
@@ -124,36 +126,44 @@ public class GeneralService {
         }
 
         String standardizedKeyword = keyword.trim().toLowerCase();
+        String sessionId = getSessionId(request);
 
-        // TODO: SHOULD BE UPDATED TO SET TO 50 FOR SENTIMENT
         return searchService.searchVideos(standardizedKeyword, NUM_OF_RESULTS_SENTIMENT)
                 .thenCompose(videos -> {
                     // Limit to top 10 videos
                     List<Video> top10Videos = videos.stream().limit(DEFAULT_NUM_OF_RESULTS).collect(Collectors.toList());
 
                     // Add only top 10 videos to the search history
-                    searchService.addSearchResultToHistory(getSessionId(request), standardizedKeyword, top10Videos);
+                    searchService.addSearchResult(sessionId, standardizedKeyword, top10Videos);
 
-                    // Calculate individual sentiments
-                    CompletionStage<Map<String, String>> individualSentimentsCombined = searchService.calculateSentiments(getSessionId(request));
+                    // Ask the sentiment actor to analyze sentiment of the videos
+                    return PatternsCS.ask(sentimentActor, new SentimentMessages.AnalyzeVideos(top10Videos), java.time.Duration.ofSeconds(5))
+                            .thenCompose(individualResponse -> {
+                                @SuppressWarnings("unchecked")
+                                Map<String, String> individualSentiments = (Map<String, String>) individualResponse;
 
-                    return individualSentimentsCombined.thenApply(individualSentiments -> {
-                        // Retrieve the entire search history for the session
-                        Map<String, List<Video>> searchHistory = searchService.getSearchHistory(getSessionId(request));
+                                // Now calculate overall sentiments for all keywords in search history
+                                return searchService.calculateSentiments(sessionId)
+                                        .thenApply(overallSentiment -> {
+                                            // Retrieve the entire search history for the session
+                                            Map<String, List<Video>> searchHistory = searchService.getSearchHistory(sessionId);
 
-                        // Pass the entire search history to the view
-                        Result result = ok(views.html.searchResults.render(
-                                searchHistory,
-                                null,
-                                individualSentiments,
-                                standardizedKeyword
-                        ));
+                                            // Return the search results view with sentiment analysis
+                                            Result result = ok(views.html.searchResults.render(
+                                                    searchHistory,
+                                                    overallSentiment,
+                                                    individualSentiments,
+                                                    standardizedKeyword
+                                            ));
 
-                        return addSessionId(request, result);
-                    });
-                }).exceptionally(ex -> {
+                                            return addSessionId(request, result);
+                                        });
+                            });
+                })
+                .exceptionally(ex -> {
                     ex.printStackTrace();
                     return internalServerError(views.html.errorPage.render("An error occurred while fetching search results."));
                 });
     }
+
 }
