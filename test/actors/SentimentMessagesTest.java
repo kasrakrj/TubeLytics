@@ -1,13 +1,12 @@
 package actors;
 import actors.SentimentMessages;
 import models.entities.Video;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.*;
 public class SentimentMessagesTest {
     @Test
     public void testAnalyzeVideosMessage() {
