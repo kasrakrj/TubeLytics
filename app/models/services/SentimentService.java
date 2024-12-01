@@ -3,6 +3,7 @@ package models.services;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -147,19 +148,21 @@ public class SentimentService {
      * @return A CompletionStage containing a list of all results
      */
     private <T> CompletionStage<List<T>> sequence(List<CompletionStage<T>> stages) {
-        CompletableFuture<List<T>> result = CompletableFuture.completedFuture(List.of());
-
-        for (CompletionStage<T> stage : stages) {
-            result = result.thenCombine(
-                    stage,
-                    (list, item) -> {
-                        List<T> newList = new ArrayList<>(list);
-                        newList.add(item);
-                        return newList;
-                    }
-            );
-        }
-
-        return result;
+        // Start with an already completed empty list
+        return stages.stream()
+                .reduce(
+                        CompletableFuture.completedFuture(new ArrayList<>()), // Initial accumulator
+                        (combinedFuture, stage) -> combinedFuture.thenCombine(stage, (list, item) -> {
+                            List<T> newList = new ArrayList<>(list);
+                            newList.add(item);
+                            return newList;
+                        }),
+                        (f1, f2) -> f1.thenCombine(f2, (list1, list2) -> {
+                            List<T> newList = new ArrayList<>(list1);
+                            newList.addAll(list2);
+                            return newList;
+                        })
+                );
     }
+
 }

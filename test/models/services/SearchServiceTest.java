@@ -562,7 +562,7 @@ public class SearchServiceTest {
      * Tests the updateVideosForKeywordAcrossSessions method to ensure it updates all sessions' search histories correctly.
      */
     @Test
-    public void testUpdateVideosForKeywordAcrossSessions() {
+    public void testUpdateVideosForKeyword() {
         // Prepare sessions and search histories
         String sessionId1 = "session1";
         String sessionId2 = "session2";
@@ -591,7 +591,7 @@ public class SearchServiceTest {
         };
 
         // Call updateVideosForKeywordAcrossSessions
-        searchService.updateVideosForKeywordAcrossSessions(keyword, newVideos);
+        searchService.updateVideosForKeyword(keyword, newVideos);
 
         // Verify that new videos have been added to each session's search history for the keyword
         Map<String, List<Video>> historySession1 = searchService.getSearchHistory(sessionId1);

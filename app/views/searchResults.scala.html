@@ -12,7 +12,7 @@
 
 @import java.util.Collections
 @import scala.jdk.CollectionConverters._
-@(searchHistory: java.util.Map[String, java.util.List[entities.Video]], overallSentiment: String, individualSentiments: Map[String, String], keyword: String)
+@(searchHistory: java.util.Map[String, java.util.List[entities.Video]], overallSentiment: Map[String, String], individualSentiments: Map[String, String], keyword: String)
 
 @main("YT Lytics") {
 <style>
@@ -66,14 +66,6 @@
         background-color: #b71c1c; /* Hover */
     }
 
-    /* SearchResult results */
-    h1 + h1 {
-        margin-top: 20px;
-        font-size: 1.5em;
-        color: #666;
-        text-align: center;
-    }
-
     /* Sentiment display */
     .sentiment {
         font-size: 1.2em;
@@ -109,7 +101,7 @@
     li h3 {
         margin: 0;
         font-size: 1.2em;
-        color: #333; /* Standard dark text color */
+        color: #333;
     }
     li a {
         text-decoration: none;
@@ -122,46 +114,6 @@
     li p strong {
         color: #444;
     }
-
-
-
-    #new-videos-section h2 {
-        font-size: 1.5em;
-        color: #d32f2f;
-        text-align: center;
-        margin-bottom: 10px;
-    }
-
-    #separator {
-        width: 80%;
-        max-width: 1000px;
-        margin: 20px auto;
-        border-bottom: 2px solid #ccc;
-    }
-
-    /* Adjust existing ul styling */
-    ul.video-list {
-        list-style-type: none;
-        padding: 0;
-        width: 100%;
-        margin: 0 auto;
-    }
-
-    #new-videos-section .video-item {
-        background-color: #e3f2fd; /* Light blue background for new videos */
-    }
-
-    #new-videos-section h2 {
-        color: #1976d2; /* Darker blue color for the header */
-    }
-
-    .new-video-item {
-        background-color: #e3f2fd; /* Light blue background */
-    }
-
-
-
-
 </style>
 
 <h1>YT Lytics - Search Results</h1>
@@ -170,26 +122,20 @@
     <input type="text" name="keyword" placeholder="Enter search keywords">
     <button type="submit">Search</button>
 </form>
-
 <script type="text/javascript">
         var searchKeywords = @Html(play.libs.Json.stringify(play.libs.Json.toJson(searchHistory.keySet().asScala)));
-
-
-
 </script>
-
 @for((key, videos) <- searchHistory.asScala.toSeq.reverse) {
 @defining(key.replaceAll("[^a-zA-Z0-9]", "_")) { safeKey =>
 <h2>Search Results for '@key'</h2>
-<div class="sentiment">
-    Sentiment for '@key': @individualSentiments.getOrElse(key, "N/A")
+<div class="sentiment" id="sentiment-@safeKey">
+    Sentiment for '@key': @overallSentiment.getOrElse(key, "N/A")
 </div>
 
 <div>
     <a href="@routes.YoutubeController.wordStats(key)" target="_blank">Search Stats</a>
 </div>
 
-<!-- Combined Videos Section for this keyword -->
 <ul class="video-list" id="video-list-@safeKey">
     @for(video <- videos.asScala) {
     <li class="video-item">
@@ -207,10 +153,8 @@
         </div>
     </li>
     }
-    <!-- New videos will be appended here via JavaScript -->
 </ul>
 <hr/>
 }
 }
-
 }
