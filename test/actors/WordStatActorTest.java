@@ -6,11 +6,8 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.testkit.TestActorRef;
 import models.entities.Video;
-import models.services.GeneralService;
 import models.services.SearchService;
 import org.junit.*;
-import org.mockito.Mockito;
-
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,11 +21,17 @@ public class WordStatActorTest {
 
     static ActorSystem system;
 
+    /**
+     * Sets up the ActorSystem before any tests are run.
+     */
     @BeforeClass
     public static void setup() {
         system = ActorSystem.create("TestSystem");
     }
 
+    /**
+     * Shuts down the ActorSystem after all tests have completed.
+     */
     @AfterClass
     public static void teardown() {
         akka.testkit.javadsl.TestKit.shutdownActorSystem(system);
@@ -48,11 +51,21 @@ public class WordStatActorTest {
                     .build();
         }
 
+        /**
+         * Creates Props for TestReceiverActor.
+         *
+         * @return Props for creating a TestReceiverActor instance.
+         */
         public static Props props() {
             return Props.create(TestReceiverActor.class);
         }
     }
 
+    /**
+     * Tests that the WordStatActor correctly handles updating videos and computes word statistics.
+     *
+     * @throws Exception if any error occurs during the test.
+     */
     @Test
     public void testHandleUpdateVideos_Success() throws Exception {
         // Mock the SearchService
@@ -90,6 +103,11 @@ public class WordStatActorTest {
         assertEquals(expectedWordStats, actor.getWordStats());
     }
 
+    /**
+     * Tests that the WordStatActor handles exceptions during video updates gracefully.
+     *
+     * @throws Exception if any error occurs during the test.
+     */
     @Test
     public void testHandleUpdateVideos_Exception() throws Exception {
         // Mock the SearchService
@@ -115,6 +133,11 @@ public class WordStatActorTest {
         assertTrue(actor.getWordStats().isEmpty());
     }
 
+    /**
+     * Tests that the WordStatActor returns the correct word statistics when requested.
+     *
+     * @throws Exception if any error occurs during the test.
+     */
     @Test
     public void testGetWordStats() throws Exception {
         // Mock the SearchService
@@ -163,6 +186,9 @@ public class WordStatActorTest {
         assertEquals(expectedWordStats, wordStats);
     }
 
+    /**
+     * Tests that the {@code props} method returns the correct Props for the WordStatActor.
+     */
     @Test
     public void testProps() {
         // Mock the SearchService
@@ -176,6 +202,9 @@ public class WordStatActorTest {
         assertNotNull(actorRef);
     }
 
+    /**
+     * Tests the initialization of the WordStatActor.
+     */
     @Test
     public void testInitialization() {
         // Mock the SearchService
