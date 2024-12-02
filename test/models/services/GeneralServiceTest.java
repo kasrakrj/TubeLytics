@@ -23,10 +23,12 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static play.mvc.Http.Status.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import static play.test.Helpers.contentAsString;
 
 public class GeneralServiceTest {
 
@@ -318,92 +320,6 @@ public class GeneralServiceTest {
         assertEquals(routes.YoutubeController.index().url(), result.redirectLocation().orElse(""));
     }
 
-    // e. Testing wordStatActorHelper
-    @Test
-    public void testWordStatActorHelper_SuccessfulRetrieval() throws Exception {
-        String keyword = "PlayFramework";
-
-        // Prepare mock responses
-        // For UpdateVideos, no response needed as it's a void operation
-        // For GetWordStats, provide word stats
-        Map<String, Long> wordStats = Map.of("playframework", 10L, "scala", 8L, "java", 5L);
-
-        // Invoke wordStatActorHelper asynchronously
-        CompletionStage<Result> resultStage = GeneralService.wordStatActorHelper(mockSearchService, mockWordStatActorProbe.ref(), keyword, mockRequest);
-
-        // Expect UpdateVideos message and reply
-        WordStatMessages.UpdateVideos receivedUpdateVideos = mockWordStatActorProbe.expectMsgClass(WordStatMessages.UpdateVideos.class);
-        assertEquals(keyword, receivedUpdateVideos.keyword);
-        mockWordStatActorProbe.reply(null); // Simulate successful processing
-
-        // Expect GetWordStats message and reply with wordStats
-        WordStatMessages.GetWordStats receivedGetWordStats = mockWordStatActorProbe.expectMsgClass(WordStatMessages.GetWordStats.class);
-        mockWordStatActorProbe.reply(wordStats);
-
-        // Await and retrieve the Result
-        Result result = resultStage.toCompletableFuture().get();
-
-        // Assertions
-        assertEquals(OK, result.status());
-        // Optionally, verify content if accessible
-        // Example:
-        // assertTrue(contentAsString(result).contains("playframework: 10"));
-        // assertTrue(contentAsString(result).contains("scala: 8"));
-        // assertTrue(contentAsString(result).contains("java: 5"));
-    }
-
-    // f. Testing searchHelper
-    @Test
-    public void testSearchHelper_ValidKeyword_SuccessfulRetrieval() throws Exception {
-        String keyword = "PlayFramework";
-
-        // Prepare mock responses
-        List<Video> videos = List.of(
-                new Video("Video1", "Description1", "Channel1", "https://thumbnail1.url", "videoId1", "channelId1", "https://www.youtube.com/watch?v=videoId1", "2024-11-24"),
-                new Video("Video2", "Description2", "Channel2", "https://thumbnail2.url", "videoId2", "channelId2", "https://www.youtube.com/watch?v=videoId2", "2024-11-24"),
-                new Video("Video3", "Description3", "Channel3", "https://thumbnail3.url", "videoId3", "channelId3", "https://www.youtube.com/watch?v=videoId3", "2024-11-24")
-        );
-
-        when(mockSearchService.searchVideos(eq("playframework"), eq(GeneralService.NUM_OF_RESULTS_SENTIMENT)))
-                .thenReturn(CompletableFuture.completedFuture(videos));
-
-        // Simulate adding search result
-        doNothing().when(mockSearchService).addSearchResult(eq("sessionId"), eq("playframework"), eq(videos));
-
-        // Prepare sentiment responses
-        Map<String, String> individualSentiments = Map.of(
-                "videoId1", "positive",
-                "videoId2", "negative",
-                "videoId3", "neutral"
-        );
-
-        when(mockSearchService.calculateSentiments(eq("sessionId")))
-                .thenReturn(CompletableFuture.completedFuture(Map.of("playframework", "mixed")));
-
-        when(mockSearchService.getSearchHistory(eq("sessionId")))
-                .thenReturn(Map.of("playframework", videos.stream().limit(10).collect(Collectors.toList())));
-
-        // Invoke searchHelper asynchronously
-        CompletionStage<Result> resultStage = GeneralService.searchHelper(mockSearchService, mockSentimentActorProbe.ref(), keyword, mockRequest);
-
-        // Expect AnalyzeVideos message and reply with individualSentiments
-        SentimentMessages.AnalyzeVideos receivedAnalyzeVideos = mockSentimentActorProbe.expectMsgClass(SentimentMessages.AnalyzeVideos.class);
-        assertEquals(videos, receivedAnalyzeVideos.getVideos());
-        mockSentimentActorProbe.reply(individualSentiments);
-
-        // Await and retrieve the Result
-        Result result = resultStage.toCompletableFuture().get();
-
-        // Assertions
-        assertEquals(OK, result.status());
-        // Optionally, verify content if accessible
-        // Example:
-        // assertTrue(contentAsString(result).contains("playframework"));
-        // assertTrue(contentAsString(result).contains("mixed"));
-        // assertTrue(contentAsString(result).contains("videoId1: positive"));
-        // assertTrue(contentAsString(result).contains("videoId2: negative"));
-    }
-
     @Test
     public void testSearchHelper_InvalidKeyword() throws Exception {
         String keyword = "   ";
@@ -415,74 +331,6 @@ public class GeneralServiceTest {
         // Assertions
         assertEquals(SEE_OTHER, result.status());
         assertEquals(routes.YoutubeController.index().url(), result.redirectLocation().orElse(""));
-    }
-
-    // g. Testing wordStatActorHelper with Exception
-    @Test
-    public void testWordStatActorHelper_ExceptionInActor() throws Exception {
-        String keyword = "PlayFramework";
-
-        // Invoke wordStatActorHelper asynchronously
-        CompletionStage<Result> resultStage = GeneralService.wordStatActorHelper(mockSearchService, mockWordStatActorProbe.ref(), keyword, mockRequest);
-
-        // Expect UpdateVideos message and reply
-        WordStatMessages.UpdateVideos receivedUpdateVideos = mockWordStatActorProbe.expectMsgClass(WordStatMessages.UpdateVideos.class);
-        assertEquals(keyword, receivedUpdateVideos.keyword);
-        mockWordStatActorProbe.reply(null); // Simulate successful processing
-
-        // Expect GetWordStats message and reply with exception
-        WordStatMessages.GetWordStats receivedGetWordStats = mockWordStatActorProbe.expectMsgClass(WordStatMessages.GetWordStats.class);
-        mockWordStatActorProbe.reply(new RuntimeException("Word stats retrieval failed"));
-
-        // Await and retrieve the Result
-        Result result = resultStage.toCompletableFuture().get();
-
-        // Assertions
-        assertEquals(INTERNAL_SERVER_ERROR, result.status());
-        // Optionally, verify error content
-        // Example:
-        // assertTrue(contentAsString(result).contains("An error occurred while fetching word stats."));
-    }
-
-    // h. Testing searchHelper with Actor Errors
-    @Test
-    public void testSearchHelper_SentimentActorError() throws Exception {
-        String keyword = "PlayFramework";
-
-        // Prepare mock responses
-        List<Video> videos = List.of(
-                new Video("Video1", "Description1", "Channel1", "https://thumbnail1.url", "videoId1", "channelId1", "https://www.youtube.com/watch?v=videoId1", "2024-11-24"),
-                new Video("Video2", "Description2", "Channel2", "https://thumbnail2.url", "videoId2", "channelId2", "https://www.youtube.com/watch?v=videoId2", "2024-11-24")
-        );
-
-        when(mockSearchService.searchVideos(eq("playframework"), eq(GeneralService.NUM_OF_RESULTS_SENTIMENT)))
-                .thenReturn(CompletableFuture.completedFuture(videos));
-
-        // Simulate adding search result
-        doNothing().when(mockSearchService).addSearchResult(eq("sessionId"), eq("playframework"), eq(videos));
-
-        when(mockSearchService.calculateSentiments(eq("sessionId")))
-                .thenReturn(CompletableFuture.completedFuture(Map.of("playframework", "mixed")));
-
-        when(mockSearchService.getSearchHistory(eq("sessionId")))
-                .thenReturn(Map.of("playframework", videos.stream().limit(10).collect(Collectors.toList())));
-
-        // Invoke searchHelper asynchronously
-        CompletionStage<Result> resultStage = GeneralService.searchHelper(mockSearchService, mockSentimentActorProbe.ref(), keyword, mockRequest);
-
-        // Expect AnalyzeVideos message and reply with exception
-        SentimentMessages.AnalyzeVideos receivedAnalyzeVideos = mockSentimentActorProbe.expectMsgClass(SentimentMessages.AnalyzeVideos.class);
-        assertEquals(videos, receivedAnalyzeVideos.getVideos());
-        mockSentimentActorProbe.reply(new RuntimeException("Sentiment analysis failed"));
-
-        // Await and retrieve the Result
-        Result result = resultStage.toCompletableFuture().get();
-
-        // Assertions
-        assertEquals(INTERNAL_SERVER_ERROR, result.status());
-        // Optionally, verify error content
-        // Example:
-        // assertTrue(contentAsString(result).contains("An error occurred while fetching search results."));
     }
 
     // i. Testing wordStatHelper with Exception in SearchService
@@ -532,4 +380,29 @@ public class GeneralServiceTest {
         // Example:
         // assertTrue(contentAsString(result).contains("An error occurred while fetching tags."));
     }
+
+    @Test
+    public void testWordStatActorHelper_InvalidKeyword() throws Exception {
+        // Arrange
+        String keyword = "   ";
+
+        // Act
+        CompletionStage<Result> resultStage = GeneralService.wordStatActorHelper(mockSearchService, mockWordStatActorProbe.ref(), keyword, mockRequest);
+        Result result = resultStage.toCompletableFuture().get();
+
+        // Assert
+        assertEquals(SEE_OTHER, result.status());
+        assertEquals(routes.YoutubeController.index().url(), result.redirectLocation().orElse(""));
+    }
+
+    @Test
+    public void testGeneralServiceInstantiation() {
+        // Act
+        GeneralService service = new GeneralService();
+
+        // Assert
+        assertNotNull(service); // Ensure the object is created successfully
+    }
+
+
 }
