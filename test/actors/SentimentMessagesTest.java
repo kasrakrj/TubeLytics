@@ -1,5 +1,4 @@
 package actors;
-import actors.SentimentMessages;
 import models.entities.Video;
 import org.junit.Test;
 
@@ -8,6 +7,13 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 public class SentimentMessagesTest {
+    @Test
+    public void testOuterClassInitialization() {
+        // Explicitly create an instance of the outer class
+        SentimentMessages sentimentMessages = new SentimentMessages();
+        assertNotNull(sentimentMessages.toString(), "SentimentMessages class instance should not be null");
+    }
+
     @Test
     public void testAnalyzeVideosMessage() {
         // Prepare test data
