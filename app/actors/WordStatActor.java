@@ -146,7 +146,7 @@ public class WordStatActor extends AbstractActor {
      *
      * @return a copy of the word statistics map
      */
-    private Map<String, Long> getWordStats() {
+    public Map<String, Long> getWordStats() {
         return new LinkedHashMap<>(wordStats);
     }
 }
