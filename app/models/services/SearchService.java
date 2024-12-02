@@ -24,15 +24,15 @@ import javax.inject.Singleton;
  * and perform sentiment analysis on search results. It integrates with SentimentService and YouTubeService.
  */
 public class SearchService {
-    private final YouTubeService youTubeService;
+    final YouTubeService youTubeService;
     private final String API_KEY;
     private final String API_URL;
     private final String YOUTUBE_SEARCH_URL;
     private static final int MAX_SEARCH_HISTORY = 10; // Limit to 10 results
-    private final Map<String, LinkedHashMap<String, List<Video>>> sessionSearchHistoryMap = new ConcurrentHashMap<>();
-    private final SentimentService sentimentService;
+    final Map<String, LinkedHashMap<String, List<Video>>> sessionSearchHistoryMap = new ConcurrentHashMap<>();
+    final SentimentService sentimentService;
     final ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
-    private final HttpClient httpClient;
+    HttpClient httpClient;
     boolean isTestingMode = true;
 
 
