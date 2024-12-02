@@ -30,6 +30,7 @@ public class YoutubeController extends Controller {
     private final WordStatService wordStatService;
     private final ChannelProfileService channelProfileService;
     private final TagsService tagsService;
+    private final HttpExecutionContext httpExecutionContext;
 
     private final ActorSystem actorSystem;
     private final Materializer materializer;
@@ -70,6 +71,7 @@ public class YoutubeController extends Controller {
         this.actorSystem = actorSystem;
         this.materializer = materializer;
         this.youTubeService = youTubeService;
+        this.httpExecutionContext = httpExecutionContext;
         this.sentimentActor = actorSystem.actorOf(SentimentActor.props(sentimentService), "sentimentActor");
         this.channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(this.youTubeService), "channelProfileActor");
         this.wordStatActor = actorSystem.actorOf(WordStatActor.props(this.searchService), "wordStatActor");
