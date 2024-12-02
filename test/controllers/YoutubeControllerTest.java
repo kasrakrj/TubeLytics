@@ -1,148 +1,202 @@
 package controllers;
 
-import actors.*;
 import akka.actor.ActorSystem;
-import akka.actor.ActorRef;
 import akka.stream.Materializer;
 import models.services.*;
-import play.libs.concurrent.HttpExecutionContext;
-import play.libs.streams.ActorFlow;
-import play.mvc.Controller;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 
-import javax.inject.Inject;
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import static models.services.SessionService.*;
+
+import static play.mvc.Http.Status.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
- * The YoutubeController class provides the main entry points for handling user interactions
- * with the YouTube API, including searching for videos, viewing tags, generating word statistics,
- * and retrieving channel profiles. It manages session data and handles asynchronous requests.
- *
- * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
+ * Unit tests for the YoutubeController class. Verifies that the controller correctly handles user interactions,
+ * manages sessions, and returns appropriate responses.
  */
-//public class YoutubeController extends Controller {
-//
-//    private final SearchService searchService;
-//    private final WordStatService wordStatService;
-//    private final ChannelProfileService channelProfileService;
-//    private final TagsService tagsService;
-//
-//    private final ActorSystem actorSystem;
-//    private final Materializer materializer;
-//
-//    private final ActorRef sentimentActor;
-//    private final ActorRef channelProfileActor;
-//    private final ActorRef wordStatActor;
-//    private final ActorRef tagActor;
-//
-//    private final YouTubeService youTubeService;
-//
-//    /**
-//     * Constructs a YoutubeController with injected dependencies.
-//     *
-//     * @param searchService         The service for searching YouTube videos.
-//     * @param wordStatService       The service for generating word statistics from video descriptions.
-//     * @param channelProfileService The service for retrieving YouTube channel profiles.
-//     * @param tagsService           The service for retrieving tags associated with videos.
-//     * @param actorSystem
-//     * @param materializer
-//     * @param youTubeService
-//     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
-//     */
-//    @Inject
-//    public YoutubeController(SearchService searchService,
-//                             WordStatService wordStatService,
-//                             ChannelProfileService channelProfileService,
-//                             TagsService tagsService,
-//                             ActorSystem actorSystem,
-//                             Materializer materializer,
-//                             YouTubeService youTubeService,
-//                             SentimentService sentimentService,
-//                             HttpExecutionContext httpExecutionContext) {
-//        this.searchService = searchService;
-//        this.wordStatService = wordStatService;
-//        this.channelProfileService = channelProfileService;
-//        this.tagsService = tagsService;
-//        this.actorSystem = actorSystem;
-//        this.materializer = materializer;
-//        this.youTubeService = youTubeService;
-//        this.sentimentActor = actorSystem.actorOf(SentimentActor.props(sentimentService), "sentimentActor");
-//        this.channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(this.youTubeService), "channelProfileActor");
-//        this.wordStatActor = actorSystem.actorOf(WordStatActor.props(this.searchService), "wordStatActor");
-//        this.tagActor= actorSystem.actorOf(TagActor.props(this.tagsService));
-//    }
-//
-//    /**
-//     * Renders the index page, initializing a session ID if it doesn't exist.
-//     *
-//     * @param request The HTTP request from the client.
-//     * @return CompletionStage of the Result, rendering the index page.
-//     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
-//     */
-//    public CompletionStage<Result> index(Http.Request request) {
-//        return CompletableFuture.completedFuture(addSessionId(request, ok(views.html.index.render())));
-//    }
-//
-//    /**
-//     * Renders the tags page for a specific video by ID.
-//     *
-//     * @param videoID The ID of the video for which to retrieve tags.
-//     * @param request The HTTP request from the client.
-//     * @return CompletionStage of the Result, rendering the tags page or an error page if an issue occurs.
-//     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
-//     */
-//    public CompletionStage<Result> tags(String videoID, Http.Request request) {
-//        return GeneralService.tagHelper(tagActor, videoID, request);
-//    }
-//    /**
-//     * Performs a video search based on a keyword, storing search history and calculating sentiment.
-//     *
-//     * @param keyword The keyword to search for.
-//     * @param request The HTTP request from the client.
-//     * @return CompletionStage of the Result, rendering the search results page or an error page if an issue occurs.
-//     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
-//     */
-//    public CompletionStage<Result> search(String keyword, Http.Request request) {
-//        return GeneralService.searchHelper(searchService, sentimentActor, keyword, request);
-//    }
-//
-//    /**
-//     * Renders the channel profile page for a given channel ID, including channel information and videos.
-//     *
-//     * @param channelId The ID of the YouTube channel.
-//     * @param request   The HTTP request from the client.
-//     * @return CompletionStage of the Result, rendering the channel profile page or an error page if an issue occurs.
-//     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
-//     */
-//    public CompletionStage<Result> channelProfile(String channelId, Http.Request request) {
-//        return GeneralService.channelProfileHelper(channelProfileActor, channelId, request);
-//    }
-//
-//    /**
-//     * Generates word statistics for a given search keyword and displays them on the word statistics page.
-//     *
-//     * @param keyword The keyword for which to generate word statistics.
-//     * @param request The HTTP request from the client.
-//     * @return CompletionStage of the Result, rendering the word statistics page or an error page if an issue occurs.
-//     * @author: Zahra Rasoulifar, Hosna Habibi, Mojtaba Peyrovian, Kasra Karaji
-//     */
-//    public CompletionStage<Result> wordStats(String keyword, Http.Request request) {
-////        return GeneralService.wordStatHelper(searchService, wordStatService, keyword, request);
-//        return GeneralService.wordStatActorHelper(searchService, wordStatActor, keyword, request);
-//    }
-//
-//    public WebSocket ws() {
-//        return WebSocket.Text.accept(request -> {
-//            String sessionId = getSessionIdByHeader(request);
-//            return ActorFlow.actorRef(
-//                    out -> UserActor.props(out, searchService, sentimentActor, sessionId),
-//                    actorSystem,
-//                    materializer
-//            );
-//        });
-//    }
-//}
+public class YoutubeControllerTest {
+
+    private ActorSystem system;
+    private YoutubeController youtubeController;
+
+    // Mocked dependencies
+    private YouTubeService mockYouTubeService;
+    private SentimentService mockSentimentService;
+    private SearchService mockSearchService;
+    private WordStatService mockWordStatService;
+    private ChannelProfileService mockChannelProfileService;
+    private TagsService mockTagsService;
+    private Materializer mockMaterializer;
+
+    // Mocked Http.Request objects
+    private Http.Request mockRequestWithoutSession;
+    private Http.Request mockRequestWithSession;
+
+    @Before
+    public void setUp() {
+        // Create a new ActorSystem for each test
+        system = ActorSystem.create("TestActorSystem-" + UUID.randomUUID());
+
+        // Initialize mocks for dependencies
+        mockYouTubeService = mock(YouTubeService.class);
+        mockSentimentService = mock(SentimentService.class);
+        mockSearchService = mock(SearchService.class);
+        mockWordStatService = mock(WordStatService.class);
+        mockChannelProfileService = mock(ChannelProfileService.class);
+        mockTagsService = mock(TagsService.class);
+        mockMaterializer = mock(Materializer.class);
+
+        // Initialize YoutubeController
+        youtubeController = new YoutubeController(
+                mockSearchService,
+                mockWordStatService,
+                mockChannelProfileService,
+                mockTagsService,
+                system,
+                mockMaterializer,
+                mockYouTubeService,
+                mockSentimentService,
+                null // Execution context is not used in these tests
+        );
+
+        // Mock Http.Request without a session ID
+        mockRequestWithoutSession = mock(Http.Request.class);
+        when(mockRequestWithoutSession.session()).thenReturn(new Http.Session(Map.of()));
+
+        // Mock Http.Request with a session ID
+        mockRequestWithSession = mock(Http.Request.class);
+        when(mockRequestWithSession.session()).thenReturn(new Http.Session(Map.of("sessionId", "existingSessionId")));
+    }
+
+    @After
+    public void tearDown() {
+        // Shutdown the ActorSystem after each test
+        system.terminate();
+        system = null;
+    }
+
+    @Test
+    public void testIndexNewSession() throws Exception {
+        // Act
+        CompletionStage<Result> resultStage = youtubeController.index(mockRequestWithoutSession);
+        Result result = resultStage.toCompletableFuture().get();
+
+        // Assert
+        assertEquals(OK, result.status());
+        assertTrue(result.session().getOptional("sessionId").isPresent());
+    }
+
+    @Test
+    public void testIndexExistingSession() throws Exception {
+        // Act
+        CompletionStage<Result> resultStage = youtubeController.index(mockRequestWithSession);
+        Result result = resultStage.toCompletableFuture().get();
+
+        // Assert
+        assertEquals(OK, result.status());
+    }
+
+    @Test
+    public void testTags_ErrorRetrieval() throws Exception {
+        // Arrange
+        String videoId = "video123";
+        when(mockTagsService.getTagsByVideoId(videoId))
+                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Tag retrieval failed")));
+
+        // Act
+        CompletionStage<Result> resultStage = youtubeController.tags(videoId, mockRequestWithoutSession);
+        Result result = resultStage.toCompletableFuture().get();
+
+        // Assert
+        assertEquals(INTERNAL_SERVER_ERROR, result.status());
+    }
+
+    @Test
+    public void testSearch_EmptyKeyword() throws Exception {
+        // Arrange
+        String keyword = "";
+
+        // Act
+        CompletionStage<Result> resultStage = youtubeController.search(keyword, mockRequestWithoutSession);
+        Result result = resultStage.toCompletableFuture().get();
+
+        // Assert
+        assertEquals(SEE_OTHER, result.status());
+    }
+
+    @Test
+    public void testSearch_NullKeyword() throws Exception {
+        // Arrange
+        String keyword = null;
+
+        // Act
+        CompletionStage<Result> resultStage = youtubeController.search(keyword, mockRequestWithoutSession);
+        Result result = resultStage.toCompletableFuture().get();
+
+        // Assert
+        assertEquals(SEE_OTHER, result.status());
+    }
+
+    @Test
+    public void testChannelProfile_ErrorRetrieval() throws Exception {
+        // Arrange
+        String channelId = "channel123";
+        when(mockChannelProfileService.getChannelInfo(channelId))
+                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Channel info retrieval failed")));
+
+        // Act
+        CompletionStage<Result> resultStage = youtubeController.channelProfile(channelId, mockRequestWithoutSession);
+        Result result = resultStage.toCompletableFuture().get();
+
+        // Assert
+        assertEquals(INTERNAL_SERVER_ERROR, result.status());
+    }
+
+    @Test
+    public void testWordStats_Simple() throws Exception {
+        // Arrange
+        String keyword = "testKeyword";
+        Http.Request mockRequest = mock(Http.Request.class);
+
+        // Act
+        CompletionStage<Result> resultStage = youtubeController.wordStats(keyword, mockRequest);
+        Result result = resultStage.toCompletableFuture().get();
+
+        // Assert
+        assertNotNull("Result should not be null", result);
+    }
+
+    @Test
+    public void testWebSocketInitialization() {
+        // Act
+        WebSocket webSocket = youtubeController.ws();
+
+        // Assert
+        assertNotNull("WebSocket should not be null", webSocket);
+    }
+
+    @Test
+    public void testWebSocketWithoutSessionId() {
+        // Arrange
+        Http.RequestHeader mockRequestHeader = mock(Http.RequestHeader.class);
+        when(mockRequestHeader.getHeaders())
+                .thenReturn(new Http.Headers(Map.of()));
+
+        // Act
+        WebSocket webSocket = youtubeController.ws();
+
+        // Assert
+        assertNotNull("WebSocket should be created", webSocket);
+    }
+
+}
