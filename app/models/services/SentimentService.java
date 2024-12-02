@@ -147,7 +147,7 @@ public class SentimentService {
      * @param <T>    The type of result each CompletionStage produces
      * @return A CompletionStage containing a list of all results
      */
-    private <T> CompletionStage<List<T>> sequence(List<CompletionStage<T>> stages) {
+    public <T> CompletionStage<List<T>> sequence(List<CompletionStage<T>> stages) {
         // Start with an already completed empty list
         return stages.stream()
                 .reduce(

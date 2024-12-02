@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.inject.Singleton;
 
 /**
  * The SearchService class provides methods to search for videos on YouTube, manage search history,
@@ -30,9 +31,10 @@ public class SearchService {
     private static final int MAX_SEARCH_HISTORY = 10; // Limit to 10 results
     private final Map<String, LinkedHashMap<String, List<Video>>> sessionSearchHistoryMap = new ConcurrentHashMap<>();
     private final SentimentService sentimentService;
-    private final ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
+    final ConcurrentMap<String, List<Video>> cache = new ConcurrentHashMap<>();
     private final HttpClient httpClient;
-    private boolean isTestingMode = true;
+    boolean isTestingMode = true;
+
 
     @Inject
     public SearchService(SentimentService sentimentService, YouTubeService youTubeService) {
@@ -125,7 +127,7 @@ public class SearchService {
     /**
      * Generates mock videos for testing mode.
      */
-    private List<Video> generateMockVideos(String keyword, int numOfResults, Set<String> processedVideoIds) {
+    public List<Video> generateMockVideos(String keyword, int numOfResults, Set<String> processedVideoIds) {
         return IntStream.range(0, numOfResults)
                 .mapToObj(i -> {
                     String videoId;
