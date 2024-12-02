@@ -2,6 +2,7 @@ package models.services;
 
 import actors.ChannelProfileMessages;
 import actors.SentimentMessages;
+import actors.TagMessages;
 import actors.WordStatMessages;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
@@ -32,16 +33,61 @@ public class GeneralService {
         return keyword != null && !keyword.trim().isEmpty();
     }
 
-    public static CompletionStage<Result> tagHelper(TagsService tagsService, String videoID, Http.Request request){
-        return tagsService.getVideoByVideoId(videoID)
-                .thenCompose(video ->
-                        tagsService.getTagsByVideo(video)
-                                .thenApply(tags -> addSessionId(request, ok(views.html.tagsPage.render(video, tags))))
-                ).exceptionally(ex -> {
-                    ex.printStackTrace();
-                    return internalServerError(views.html.errorPage.render("An error occurred while fetching tags."));
-                });
+    /**
+     * Asynchronously retrieves video and tag information using the TagActor.
+     *
+     * @param tagActor The actor responsible for fetching tags.
+     * @param videoId  The ID of the video.
+     * @param request  The HTTP request.
+     * @return A CompletionStage containing the Result to render.
+     */
+    public static CompletionStage<Result> tagHelper(ActorRef tagActor, String videoId, Http.Request request) {
+        // Ask the actor for video information
+        CompletionStage<Object> videoFuture = Patterns.ask(
+                tagActor,
+                new TagMessages.GetVideo(videoId),
+                Duration.ofSeconds(5)
+        );
+
+        // Ask the actor for tags
+        CompletionStage<Object> tagsFuture = Patterns.ask(
+                tagActor,
+                new TagMessages.GetTags(videoId),
+                Duration.ofSeconds(5)
+        );
+
+        // Combine both futures
+        return videoFuture.thenCombine(tagsFuture, (videoResponse, tagsResponse) -> {
+            // Check for errors in video response
+            if (videoResponse instanceof TagMessages.TagsError) {
+                TagMessages.TagsError error = (TagMessages.TagsError) videoResponse;
+                return internalServerError(views.html.errorPage.render(error.getErrorMessage()));
+            }
+
+            // Check for errors in tags response
+            if (tagsResponse instanceof TagMessages.TagsError) {
+                TagMessages.TagsError error = (TagMessages.TagsError) tagsResponse;
+                return internalServerError(views.html.errorPage.render(error.getErrorMessage()));
+            }
+
+            // Check if responses are of correct types
+            if (videoResponse instanceof TagMessages.GetVideoResponse && tagsResponse instanceof TagMessages.GetTagsResponse) {
+                TagMessages.GetVideoResponse videoResult = (TagMessages.GetVideoResponse) videoResponse;
+                TagMessages.GetTagsResponse tagsResult = (TagMessages.GetTagsResponse) tagsResponse;
+
+                Video video = videoResult.getVideo();
+                List<String> tags = tagsResult.getTags();
+
+                return addSessionId(request, ok(views.html.tagsPage.render(video, tags)));
+            } else {
+                return internalServerError(views.html.errorPage.render("An unexpected error occurred."));
+            }
+        }).exceptionally(ex -> {
+            ex.printStackTrace();
+            return internalServerError(views.html.errorPage.render("An error occurred while fetching tags."));
+        });
     }
+
 
     public static CompletionStage<Result> channelProfileHelper(ActorRef channelProfileActor, String channelId, Http.Request request){
         // Ask the actor for channel info

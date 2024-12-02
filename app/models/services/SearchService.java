@@ -1,6 +1,7 @@
 package models.services;
 
 import models.entities.Video;
+import org.checkerframework.checker.units.qual.A;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -43,6 +44,22 @@ public class SearchService {
         this.API_URL = youTubeService.getApiUrl();
         this.YOUTUBE_SEARCH_URL = API_URL + "/search?part=snippet&order=date&type=video&maxResults=";
         this.httpClient = HttpClient.newHttpClient();
+    }
+    public String getYOUTUBE_SEARCH_URL(){
+        return YOUTUBE_SEARCH_URL;
+    }
+    public HttpClient getHttpClient(){
+        return httpClient;
+    }
+    public ConcurrentMap<String, List<Video>> getCache(){
+        return cache;
+    }
+
+    public String getAPI_KEY(){
+        return API_KEY;
+    }
+    public String getAPI_URL(){
+        return API_URL;
     }
 
     /**

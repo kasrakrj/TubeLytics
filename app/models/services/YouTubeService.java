@@ -30,7 +30,9 @@ public class YouTubeService {
     private static final String API_KEY = config.getString("youtube.api.key");
     private static final String API_URL = config.getString("youtube.api.url");
     private static final String BASE_VIDEO_URL = "https://www.youtube.com/watch?v=";
+    public YouTubeService(){
 
+    }
     /**
      * Retrieves the YouTube API key from the configuration.
      *
